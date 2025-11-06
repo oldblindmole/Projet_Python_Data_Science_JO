@@ -63,8 +63,9 @@ def tableau_scraper(id_html) :
 
     # on remplace les cellules vides par NaN (pas d'épreuve)
     data_medailles = data_medailles.replace("", np.nan)
-    
     # on remplace les cellules – par 0 (0 médaille à l'épreuve)
     data_medailles = data_medailles.replace("–", 0)
+
+    #TODO supprimer ligne vide (la dernière)
 
     return data_medailles
