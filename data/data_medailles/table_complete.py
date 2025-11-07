@@ -1,8 +1,7 @@
 """Fichier de création d'une table "médailles" complète et nettoyée"""
 
-import pandas as pd
-import numpy as np
 import os
+import pandas as pd
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -14,7 +13,7 @@ data_bronze = pd.read_csv("data_bronze.csv")
 diff_medailles = [data_or, data_argent, data_bronze]
 
 # enlever les lignes vides / qui ne nous intéressent pas
-for i in range(len(diff_medailles)):
+for i, medaille in enumerate(diff_medailles):
     diff_medailles[i] = diff_medailles[i].dropna(how="all")
     diff_medailles[i] = diff_medailles[i].drop(diff_medailles[i].tail(3).index)
 
