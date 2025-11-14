@@ -2,9 +2,9 @@
 
 import pandas as pd
 
-df = pd.read_parquet("licences_long.parquet")
+data_licences = pd.read_parquet("licences_long.parquet")
 
-fed_list = df["Fédération"].unique()
+fed_list = data_licences["Fédération"].unique()
 code_list = ["ATH", "AVI", "BAD", "BAK",
              "BOX", "CAK", "CYC", "EQU", 
              "ESC", "FOO", "DIV", "GYM", 
@@ -44,7 +44,7 @@ cs = pd.DataFrame({
 # harmonise l'apostrophe entre les deux data frame
 cs["Fédération"] = cs["Fédération"].str.replace("’", "'", regex=False)
 
-df = df.merge(
+data_licences = data_licences.merge(
   cs,
   left_on = ["Fédération"],
   right_on = ["Fédération"],
