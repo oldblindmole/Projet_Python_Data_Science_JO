@@ -29,4 +29,26 @@ diff_medailles[2].columns = ["Sport", "2024_bronze", "2020_bronze"]
 data_medailles = diff_medailles[0].merge(diff_medailles[1], on="Sport", how="outer")
 data_medailles = data_medailles.merge(diff_medailles[2], on="Sport", how="outer")
 
+# enlever les lignes avec NaN dans les colonnes médailles
+# (pas d'épreuves dans les 2 années)
+cols_to_check = data_medailles.columns[1:7]
+data_medailles = data_medailles.dropna(subset=cols_to_check, how="all")
+
+# ajout du code sport
+code_list = ["ATH", "AVI", "BAD",
+             "BAK", "BOX", "DIV",
+             "CAK", "CYC", "ESD", 
+             "ESC", "FOO", "GOL",
+             "GYM", "HAL", "HAN",
+             "HOC", "JUD", "KAR",
+             "LUT", "NAT", "DIV",
+             "PEN", "DIV", "DIV",
+             "SKT", "SUR", "TAE",
+             "TEN", "TDT", "TIR", 
+             "TAR", "TRI", "VOI",
+             "VOL", "DIV", "EQU"]
+
+
+data_medailles.insert(0, "Code_sport", code_list)
+
 print(data_medailles)
