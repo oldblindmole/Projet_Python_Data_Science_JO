@@ -48,7 +48,6 @@ code_list = ["ATH", "AVI", "BAD",
              "TAR", "TRI", "VOI",
              "VOL", "DIV", "EQU"]
 
-
 data_medailles.insert(0, "Code_sport", code_list)
 
 print(data_medailles)
