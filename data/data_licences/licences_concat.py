@@ -1,7 +1,10 @@
 """Création de la base de données au format long"""
 
+import os
 import pyarrow.parquet as pq
 import pyarrow as pa
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 liste_fichiers = ["Lics_2016_semidef.parquet",
                   "Lics_2017_semidef.parquet", 
