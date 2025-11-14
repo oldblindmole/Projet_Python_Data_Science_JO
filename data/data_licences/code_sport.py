@@ -50,5 +50,3 @@ df = df.merge(
   right_on = ["Fédération"],
   how = "left"
 )
-
-
