@@ -3,6 +3,7 @@
 import os
 import pandas as pd
 import pyarrow.parquet as pq
+import pyarrow as pa
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -55,5 +56,5 @@ data_licences = data_licences.merge(
   how = "left"
 )
 
-pq.write_table(data_licences, "data_licences.parquet")
-
+table = pa.Table.from_pandas(data_licences)
+pq.write_table(table, "data_licences.parquet")
