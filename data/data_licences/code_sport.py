@@ -15,6 +15,12 @@ data_licences["Fédération"] = data_licences["Fédération"].apply(
     lambda x: unicodedata.normalize("NFKC", str(x))
 )
 
+#règle le problème d'apostrophe sur la fédération française d'hélicoptère
+data_licences["Fédération"] = data_licences["Fédération"].str.replace(
+    "Fédération Française d’hélicoptère", "Fédération Française d'hélicoptère", regex=False
+    )
+
+#ajout du code sport
 fed_list = data_licences["Fédération"].unique()
 code_list = ["ATH", "AVI", "BAD", "BAK",
              "BOX", "CAK", "CYC", "EQU", 
