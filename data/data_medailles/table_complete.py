@@ -6,9 +6,9 @@ import pandas as pd
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
-data_or = pd.read_csv("data_or.csv")
-data_argent = pd.read_csv("data_argent.csv")
-data_bronze = pd.read_csv("data_bronze.csv")
+data_or = pd.read_csv("data_or_jo.csv")
+data_argent = pd.read_csv("data_argent_jo.csv")
+data_bronze = pd.read_csv("data_bronze_jo.csv")
 
 diff_medailles = [data_or, data_argent, data_bronze]
 
@@ -70,6 +70,6 @@ data_medailles["total_medailles_2024"] = (
 )
 
 
-data_medailles.to_csv("data_medailles.csv")
+data_medailles.to_csv("data_medailles_jo.csv")
 
 print(data_medailles)

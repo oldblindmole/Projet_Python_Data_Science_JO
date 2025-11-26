@@ -11,7 +11,7 @@ def gel(type_medaille, id_html) :
     type_medaille (str) : couleur de la médaille étudiée
     id_html (str) : identifiant html du titre au dessus du tableau dans la page
     """
-    output_path = os.path.join(os.path.dirname(__file__), f"data_{type_medaille}.csv")
+    output_path = os.path.join(os.path.dirname(__file__), f"data_{type_medaille}_JO.csv")
     data = tableau_scraper(id_html)
     data.to_csv(output_path, index=False)
 
