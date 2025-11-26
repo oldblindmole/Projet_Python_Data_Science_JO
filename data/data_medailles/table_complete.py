@@ -50,4 +50,6 @@ code_list = ["ATH", "AVI", "BAD",
 
 data_medailles.insert(0, "Code_sport", code_list)
 
+data_medailles.to_csv("data_medailles.csv")
+
 print(data_medailles)
