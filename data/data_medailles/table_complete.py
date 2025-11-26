@@ -50,6 +50,20 @@ code_list = ["ATH", "AVI", "BAD",
 
 data_medailles.insert(0, "Code_sport", code_list)
 
+# ajout total des médailles
+data_medailles["total_medailles_2020"] = (
+    data_medailles["2020_or"].fillna(0)
+    + data_medailles["2020_argent"].fillna(0)
+    + data_medailles["2020_bronze"].fillna(0)
+)
+
+data_medailles["total_medailles_2024"] = (
+    data_medailles["2024_or"].fillna(0)
+    + data_medailles["2024_argent"].fillna(0)
+    + data_medailles["2024_bronze"].fillna(0)
+)
+
+
 data_medailles.to_csv("data_medailles.csv")
 
 print(data_medailles)
