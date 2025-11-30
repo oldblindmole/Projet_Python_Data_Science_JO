@@ -29,7 +29,7 @@ code_list = ["ATH", "AVI", "BAD", "BAK",
              "LUT", "NAT", "PEN", "DIV", 
              "TAE", "TEN", "TDT", "TIR", 
              "TAR", "TRI", "VOI", "VOL", 
-             "DIV", "GOL", "DIV", "ESD", 
+             "DIV", "GOL", "RUG", "ESD", 
              "SKT", "SUR", "BAS", "DIV", 
              "DIV", "DIV", "DIV", "DIV", 
              "DIV", "DIV", "DIV", "DIV", 
@@ -40,7 +40,7 @@ code_list = ["ATH", "AVI", "BAD", "BAK",
              "DIV", "DIV", "KAR", "DIV", 
              "DIV", "DIV", "DIV", "DIV", 
              "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
+             "RUG", "DIV", "DIV", "DIV", 
              "DIV", "DIV", "DIV", "DIV", 
              "DIV", "DIV", "DIV", "DIV", 
              "DIV", "DIV", "DIV", "DIV", 
@@ -69,7 +69,7 @@ data_licences = data_licences.merge(
 data_licences["code_dep"] = data_licences["Département"].str.extract(r"^(\d{2,3}|2A|2B)")
 
 #renomme les colonnes
-data_licences.columns = ['code_2024', 'code_année_n', 'codes_2016_2024', 'federation', 'annee',
+data_licences.columns = ['code_2024', 'code_annee_n', 'codes_2016_2024', 'federation', 'annee',
        'sexe', 'age', 'tranche_age', 'grande_tranche_age', 'region',
        'departement_long', 'licences_annuelles', 'code_sport','code_dep']
 
