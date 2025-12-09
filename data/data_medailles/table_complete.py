@@ -21,13 +21,13 @@ for i, medaille in enumerate(diff_medailles):
 diff_medailles = [df[["Sport", "2024", "2020", "2016"]] for df in diff_medailles]
 
 # renommer les variables pour préparer le merge
-diff_medailles[0].columns = ["Sport", "2024_or", "2020_or", "2016_or"]
-diff_medailles[1].columns = ["Sport", "2024_argent", "2020_argent", "2016_argent"]
-diff_medailles[2].columns = ["Sport", "2024_bronze", "2020_bronze", "2016_bronze"]
+diff_medailles[0].columns = ["sport", "2024_or", "2020_or", "2016_or"]
+diff_medailles[1].columns = ["sport", "2024_argent", "2020_argent", "2016_argent"]
+diff_medailles[2].columns = ["sport", "2024_bronze", "2020_bronze", "2016_bronze"]
 
 # merge
-data_medailles = diff_medailles[0].merge(diff_medailles[1], on="Sport", how="outer")
-data_medailles = data_medailles.merge(diff_medailles[2], on="Sport", how="outer")
+data_medailles = diff_medailles[0].merge(diff_medailles[1], on="sport", how="outer")
+data_medailles = data_medailles.merge(diff_medailles[2], on="sport", how="outer")
 
 # enlever les lignes avec NaN dans les colonnes médailles
 # (pas d'épreuves dans les 2 années)
@@ -48,7 +48,7 @@ code_list = ["ATH", "AVI", "BAD",
              "TAR", "TRI", "VOI",
              "VOL", "DIV", "EQU"]
 
-data_medailles.insert(0, "Code_sport", code_list)
+data_medailles.insert(0, "code_sport", code_list)
 
 # ajout total des médailles
 data_medailles["total_medailles_2016"] = (
@@ -69,6 +69,8 @@ data_medailles["total_medailles_2024"] = (
     + data_medailles["2024_bronze"].fillna(0)
 )
 
+# enlever les DIV, qui ne nous intéressent pas
+data_medailles = data_medailles[~data_medailles["code_sport"].str.contains("DIV")]
 
 data_medailles.to_csv("data_medailles_jo.csv")
 
