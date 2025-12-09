@@ -69,6 +69,8 @@ data_medailles["total_medailles_2024"] = (
     + data_medailles["2024_bronze"].fillna(0)
 )
 
+# enlever les DIV, qui ne nous intéressent pas
+data_medailles = data_medailles[~data_medailles["code_sport"].str.contains("DIV")]
 
 data_medailles.to_csv("data_medailles_jo.csv")
 
