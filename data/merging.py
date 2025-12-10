@@ -10,4 +10,4 @@ df_med = pd.read_csv("data_medailles/data_medailles_jo.csv")
 
 df_complet = pd.merge(df_lic, df_med, how='left', on="code_sport")
 
-df_complet.to_csv("data_complet.csv")
+df_complet.to_parquet("data_complet.parquet")

@@ -72,6 +72,6 @@ data_medailles["total_medailles_2024"] = (
 # enlever les DIV, qui ne nous intéressent pas
 data_medailles = data_medailles[~data_medailles["code_sport"].str.contains("DIV")]
 
-data_medailles.to_csv("data_medailles_jo.csv")
+data_medailles.to_csv("data_medailles_jo_2.csv", index=False)
 
 print(data_medailles)
