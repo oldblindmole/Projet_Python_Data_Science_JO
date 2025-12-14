@@ -105,9 +105,9 @@ data_bronze = pd.read_csv("data_bronze_jo.csv")
 diff_medailles = [data_or, data_argent, data_bronze]
 
 # enlever les lignes vides / qui ne nous intéressent pas
-for i, medaille in enumerate(diff_medailles):
-    diff_medailles[i] = diff_medailles[i].dropna(how="all")
-    diff_medailles[i] = diff_medailles[i].drop(diff_medailles[i].tail(3).index)
+for j, medaille in enumerate(diff_medailles):
+    diff_medailles[j] = diff_medailles[j].dropna(how="all")
+    diff_medailles[j] = diff_medailles[j].drop(diff_medailles[j].tail(3).index)
 
 # enlever les colonnes (années notamment) qui ne nous intéressent pas
 diff_medailles = [df[["Sport", "2024", "2020", "2016"]] for df in diff_medailles]
