@@ -10,6 +10,9 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
+import pyarrow.parquet as pq
+import pyarrow as pa
+import unicodedata
 
 # --- Paramètres globaux ---
 URL_JO = "https://fr.wikipedia.org/wiki/France_aux_Jeux_olympiques"
@@ -224,3 +227,145 @@ df_med = pd.read_csv("data/data_medailles/data_medailles_jo.csv")
 df_complet = pd.merge(df_lic, df_med, how='left', on="code_sport")
 
 df_complet.to_parquet("data_complet.parquet")
+
+#LICENCES
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+liste_fichiers = ["Lics_2016_semidef.parquet",
+                  "Lics_2017_semidef.parquet", 
+                  "Lics_2018_semidef.parquet",
+                  "Lics_2019_def.parquet",
+                  "Lics_2020_def.parquet",
+                  "Lics_2021_def.parquet",
+                  "Lics_2022_def.parquet",
+                  "Lics_2023_semidef.parquet",
+                  "Lics_2024_semidef.parquet"]
+
+def reorganiser_colonnes(liste_fichiers):
+    """
+    Réorganise les colonnes de tous les fichiers parquet
+    selon l'ordre du premier fichier.
+
+    Paramètres
+    ----------
+    liste_fichiers : str.
+        Nom de la liste de fichiers dont l'ordre des colonnes doit être harmonisé.
+
+    Retour
+    ------
+    tables : list[pyarrow.Table].
+        Liste des tables avec l'ordre des colonnes harmonisé.
+    """
+    ref_cols = pq.read_table(liste_fichiers[0]).column_names
+    tables = []
+
+    for fichier in liste_fichiers:
+        table = pq.read_table(fichier)
+        table = table.select(ref_cols)
+        tables.append(table)
+
+    return tables
+
+def concatenation_gel(tables):
+    """
+    Concatène les tables en une base de données "long".
+
+    Paramètres
+    ----------
+    tables : list[pyarrow.Table].
+        Liste des tables à concaténer.
+
+    Retour
+    ------
+    pyarrow.Table
+        Table concaténée.
+    """    
+    return pa.concat_tables(tables)
+
+def normalisation_unicode(table):
+    """
+    Normalise les caractères en unicode dans une table.
+
+    Paramètres
+    ----------
+    table : pyarrow.Table
+        Table à normaliser.
+
+    Retour
+    ------
+    df : pd.DataFrame
+        Dataframe pandas correspondant avec caractères normalisés.
+    """   
+    df = table.to_pandas()
+
+    #normalisation des caractères en unicode
+    df["Fédération"] = df["Fédération"].apply(
+        lambda x: unicodedata.normalize("NFKC", str(x))
+    )
+
+    #règle le problème d'apostrophe sur la fédération française d'hélicoptère
+    df["Fédération"] = df["Fédération"].str.replace(
+        "Fédération Française d’hélicoptère", "Fédération Française d'hélicoptère", regex=False
+    )
+
+    return df
+
+#ajout du code sport
+fed_list = data_licences["Fédération"].unique()
+code_list = ["ATH", "AVI", "BAD", "BAK",
+             "BOX", "CAK", "CYC", "EQU", 
+             "ESC", "FOO", "DIV", "GYM", 
+             "HAL", "HAN", "HOC", "JUD", 
+             "LUT", "NAT", "PEN", "DIV", 
+             "TAE", "TEN", "TDT", "TIR", 
+             "TAR", "TRI", "VOI", "VOL", 
+             "DIV", "GOL", "RUG", "ESD", 
+             "SKT", "SUR", "BAS", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "KAR", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "RUG", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV", "DIV", "DIV", 
+             "DIV", "DIV"]
+
+cs = pd.DataFrame({
+    "Fédération": fed_list,
+    "Code_sport": code_list
+    })
+
+data_licences = data_licences.merge(
+  cs,
+  left_on = ["Fédération"],
+  right_on = ["Fédération"],
+  how = "left"
+)
+
+#création d'un code département pour n'avoir que leur numéro
+data_licences["code_dep"] = data_licences["Département"].str.extract(r"^(\d{2,3}|2A|2B)")
+
+#renomme les colonnes
+data_licences.columns = ['code_2024', 'code_annee_n', 'codes_2016_2024', 'federation', 'annee',
+       'sexe', 'age', 'tranche_age', 'grande_tranche_age', 'region',
+       'departement_long', 'licences_annuelles', 'code_sport','code_dep']
+
+#gel des données
+table = pa.Table.from_pandas(data_licences)
+pq.write_table(table, "data_licences.parquet")
+
+
