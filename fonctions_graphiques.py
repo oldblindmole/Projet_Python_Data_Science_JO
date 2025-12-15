@@ -13,9 +13,7 @@ import ipywidgets as widgets
 from IPython.display import display, clear_output
 
 
-# -------------------------------
 # Chargement des données
-# -------------------------------
 
 
 def charger_donnees(
@@ -58,10 +56,7 @@ def charger_donnees(
     return data_complet, gdf_dep, data_pop
 
 
-# -------------------------------
 # Cartes par département
-# -------------------------------
-
 
 def aggregate_by_year(df, year):
     """
@@ -265,10 +260,7 @@ def plot_evolution(data_complet, gdf_dep, annee1, annee2, sport="all", title=Non
     plt.show()
 
 
-# -------------------------------
 # Widgets pour cartes
-# -------------------------------
-
 
 def widgets_licences(data_complet, gdf_dep, data_pop):
     """
@@ -302,7 +294,6 @@ def widgets_licences(data_complet, gdf_dep, data_pop):
     out = widgets.Output()
 
     def update(change=None):
-        # On efface puis on redessine pour éviter l'empilement des figures
         with out:
             clear_output(wait=True)
             plot_licences(
@@ -374,10 +365,7 @@ def widgets_evolution(data_complet, gdf_dep):
     update()
 
 
-# -------------------------------
-# Graphiques par âge (avec Plotly)
-# -------------------------------
-
+# Graphiques par âge
 
 def graph_evol_lic_age(df, age="all"):
     """
@@ -650,10 +638,7 @@ def graph_decompo_sports_tranche_fine(df, annee="all"):
     fig.show()
 
 
-# -------------------------------
-# Widgets pour graphiques par âge
-# -------------------------------
-
+# Widgets pour les graphiques par âge
 
 def widgets_graph_evol_lic_age(data_complet):
     """

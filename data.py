@@ -123,7 +123,7 @@ def nettoyer_base(df):
         DataFrame nettoyé.
     """
     df = df.dropna(how="all")
-    df = df.drop(df.tail(3).index)  # supprimer les lignes de total inutiles
+    df = df.drop(df.tail(3).index)
     df = df[["Sport", "2024", "2020", "2016"]]
     return df
 
@@ -218,8 +218,8 @@ import pandas as pd
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-df_lic = pd.read_parquet("data_licences/data_licences.parquet")
-df_med = pd.read_csv("data_medailles/data_medailles_jo.csv")
+df_lic = pd.read_parquet("data/data_licences/data_licences.parquet")
+df_med = pd.read_csv("data/data_medailles/data_medailles_jo.csv")
 
 df_complet = pd.merge(df_lic, df_med, how='left', on="code_sport")
 
