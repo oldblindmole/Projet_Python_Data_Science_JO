@@ -19,7 +19,6 @@ URL_JO = "https://fr.wikipedia.org/wiki/France_aux_Jeux_olympiques"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = BASE_DIR
 
-
 # --- Chargement de la page Wikipedia ---
 def charger_page_wiki(url=URL_JO):
     """
@@ -230,9 +229,21 @@ df_complet.to_parquet("data_complet.parquet")
 
 #LICENCES
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+def reorganiser_colonnes():
+    """
+    Réorganise les colonnes de tous les fichiers parquet
+    selon l'ordre du premier fichier.
 
-liste_fichiers = ["Lics_2016_semidef.parquet",
+    Paramètres
+    ----------
+    Aucun
+
+    Retour
+    ------
+    tables : list[pyarrow.Table].
+        Liste des tables avec l'ordre des colonnes harmonisé.
+    """
+    liste_fichiers = ["Lics_2016_semidef.parquet",
                   "Lics_2017_semidef.parquet", 
                   "Lics_2018_semidef.parquet",
                   "Lics_2019_def.parquet",
@@ -242,21 +253,6 @@ liste_fichiers = ["Lics_2016_semidef.parquet",
                   "Lics_2023_semidef.parquet",
                   "Lics_2024_semidef.parquet"]
 
-def reorganiser_colonnes(liste_fichiers):
-    """
-    Réorganise les colonnes de tous les fichiers parquet
-    selon l'ordre du premier fichier.
-
-    Paramètres
-    ----------
-    liste_fichiers : str.
-        Nom de la liste de fichiers dont l'ordre des colonnes doit être harmonisé.
-
-    Retour
-    ------
-    tables : list[pyarrow.Table].
-        Liste des tables avec l'ordre des colonnes harmonisé.
-    """
     ref_cols = pq.read_table(liste_fichiers[0]).column_names
     tables = []
 
@@ -280,7 +276,7 @@ def concatenation_gel(tables):
     ------
     pyarrow.Table
         Table concaténée.
-    """    
+    """
     return pa.concat_tables(tables)
 
 def normalisation_unicode(table):
@@ -296,7 +292,7 @@ def normalisation_unicode(table):
     ------
     df : pd.DataFrame
         Dataframe pandas correspondant avec caractères normalisés.
-    """   
+    """
     df = table.to_pandas()
 
     #normalisation des caractères en unicode
@@ -311,9 +307,21 @@ def normalisation_unicode(table):
 
     return df
 
-#ajout du code sport
-fed_list = data_licences["Fédération"].unique()
-code_list = ["ATH", "AVI", "BAD", "BAK",
+def code_sport(df):
+    """
+    Ajoute le code_sport à la base des licenciés.
+
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        Data frame pandas auquel ajouter le code sport.
+
+    Retour
+    ------
+    df : pd.DataFrame
+        Dataframe pandas avec la nouvelle colonne code_sport.
+    """
+    code_list = ["ATH", "AVI", "BAD", "BAK",
              "BOX", "CAK", "CYC", "EQU", 
              "ESC", "FOO", "DIV", "GYM", 
              "HAL", "HAN", "HOC", "JUD", 
@@ -344,28 +352,70 @@ code_list = ["ATH", "AVI", "BAD", "BAK",
              "DIV", "DIV", "DIV", "DIV", 
              "DIV", "DIV"]
 
-cs = pd.DataFrame({
-    "Fédération": fed_list,
-    "Code_sport": code_list
-    })
+    fed_list = df["Fédération"].unique()
+    cs = pd.DataFrame({
+        "Fédération": fed_list,
+        "Code_sport": code_list
+        })
 
-data_licences = data_licences.merge(
-  cs,
-  left_on = ["Fédération"],
-  right_on = ["Fédération"],
-  how = "left"
-)
+    df = df.merge(
+    cs,
+    left_on = ["Fédération"],
+    right_on = ["Fédération"],
+    how = "left"
+    )
 
-#création d'un code département pour n'avoir que leur numéro
-data_licences["code_dep"] = data_licences["Département"].str.extract(r"^(\d{2,3}|2A|2B)")
+    return df
 
-#renomme les colonnes
-data_licences.columns = ['code_2024', 'code_annee_n', 'codes_2016_2024', 'federation', 'annee',
+def code_dep(df):
+    """
+    Crée un code département avec seulement leur numéro.
+
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        Data frame pandas auquel ajouter le code département.
+
+    Retour
+    ------
+    df : pd.DataFrame
+        Dataframe pandas avec la nouvelle colonne code_dep.
+    """
+    df["code_dep"] = df["Département"].str.extract(r"^(\d{2,3}|2A|2B)")
+
+    return df
+
+def renommer_colonnes(df):
+    """
+    Renomme les colonnes du data frame licenciés.
+
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        Data frame pandas dont les colonnes doivent être renommées.
+
+    Retour
+    ------
+    df : pd.DataFrame
+        Dataframe pandas avec colonnes renommées.
+    """
+    df.columns = ['code_2024', 'code_annee_n', 'codes_2016_2024', 'federation', 'annee',
        'sexe', 'age', 'tranche_age', 'grande_tranche_age', 'region',
        'departement_long', 'licences_annuelles', 'code_sport','code_dep']
+  
+    return df
 
-#gel des données
-table = pa.Table.from_pandas(data_licences)
-pq.write_table(table, "data_licences.parquet")
+def gel_licences(df, nom_fichier="data_licences.parquet"):
+    """
+    Gel de la base des licenciés avec le code sport en fichier parquet.
 
-
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        Data frame pandas à écrire en parquet.
+    nom_fichier : str (optionnel)
+        nom du fichier parquet à écrire
+    """
+    chemin_sortie = os.path.join(DATA_DIR, nom_fichier)
+    table = pa.Table.from_pandas(df)
+    pq.write_table(table, chemin_sortie)
