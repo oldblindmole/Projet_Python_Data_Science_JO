@@ -6,13 +6,14 @@ le notebook principal (main.ipynb).
 """
 
 import os
+import unicodedata
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
 import pyarrow.parquet as pq
 import pyarrow as pa
-import unicodedata
+
 
 # --- Paramètres globaux ---
 URL_JO = "https://fr.wikipedia.org/wiki/France_aux_Jeux_olympiques"
@@ -252,11 +253,13 @@ def reorganiser_colonnes():
                   "Lics_2022_def.parquet",
                   "Lics_2023_semidef.parquet",
                   "Lics_2024_semidef.parquet"]
+    
+    liste_fichiers_2 = [DATA_DIR / f for f in liste_fichiers]
 
-    ref_cols = pq.read_table(liste_fichiers[0]).column_names
+    ref_cols = pq.read_table(liste_fichiers_2[0]).column_names
     tables = []
 
-    for fichier in liste_fichiers:
+    for fichier in liste_fichiers_2:
         table = pq.read_table(fichier)
         table = table.select(ref_cols)
         tables.append(table)
@@ -402,7 +405,7 @@ def renommer_colonnes(df):
     df.columns = ['code_2024', 'code_annee_n', 'codes_2016_2024', 'federation', 'annee',
        'sexe', 'age', 'tranche_age', 'grande_tranche_age', 'region',
        'departement_long', 'licences_annuelles', 'code_sport','code_dep']
-  
+ 
     return df
 
 def gel_licences(df, nom_fichier="data_licences.parquet"):
