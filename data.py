@@ -385,8 +385,77 @@ def gel_licences(df, nom_fichier="data_licences.parquet"):
     df : pd.DataFrame
         Data frame pandas à écrire en parquet.
     nom_fichier : str (optionnel)
-        nom du fichier parquet à écrire
+        Nom du fichier parquet à écrire.
     """
     chemin_sortie = os.path.join(DATA_DIR, nom_fichier)
     table = pa.Table.from_pandas(df)
     pq.write_table(table, chemin_sortie)
+
+def calcul_ratio_nr_annee(df, annee):
+    """
+    Calcule le ratio de licenciés géographiquement 'Non Répartis' (NR) par année.
+
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        Le DataFrame pandas contenant les colonnes 'annee', 'code_dep' et 
+        'licences_annuelles'.
+
+    Retour
+    ------
+    np.float(64)
+        Le ratio de licenciés non répartis géographiquement sur une année.
+    """
+    df_nr = df[df["code_dep"].isna()]
+    return df_nr["licences_annuelles"][df_nr["annee"] == annee].sum()/df["licences_annuelles"][df["annee"]==annee].sum()
+
+def calcul_ratio_nr(df):
+    """
+    Calcule le ratio de licenciés géographiquement 'Non Répartis' (NR) dans toute la base.
+
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        Le DataFrame pandas contenant les colonnes 'code_dep' et 
+        'licences_annuelles'.
+
+    Retour
+    ------
+    np.float(64)
+        Le ratio de licenciés non répartis géographiquement dans toute la base.
+    """
+    df_nr = df[df["code_dep"].isna()]
+    return df_nr["licences_annuelles"].sum()/df["licences_annuelles"].sum()
+
+def tableau_ratios_nr(df):
+    """
+    Calcule et présente le ratio de licenciés géographiquement 'Non Répartis' (NR) par année et le ratio global 
+    sous forme de DataFrame Pandas.
+
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        Le DataFrame pandas contenant les colonnes 'annee', 'code_dep' et 
+        'licences_annuelles'.
+
+    Retour
+    ------
+    df_ratios_nr : pd.DataFrame
+        Un tableau des ratios formatés en pourcentage.
+    """
+
+    resultats = {}
+    annees = sorted(df["annee"].unique())
+ 
+    for a in annees:
+        ratio = calcul_ratio_nr_annee(df, a)
+        resultats[a] = [f"{ratio * 100:.2f} %"]
+     
+    ratio_global = calcul_ratio_nr(df)
+    resultats["Global"] = [f"{ratio_global * 100:.2f} %"]
+ 
+    df_ratios_nr = pd.DataFrame(resultats, index=["Ratio NR"])
+  
+    return df_ratios_nr
+
+
