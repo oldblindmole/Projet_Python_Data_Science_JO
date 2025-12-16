@@ -144,7 +144,7 @@ def plot_licences(data_complet, gdf_dep, data_pop, annee, sport="all", title=Non
     ) * 100
 
     # Affichage
-    fig, ax = plt.subplots(figsize=(10, 12))
+    fig, ax = plt.subplots(figsize=(10, 12)) # pylint: disable=W0612
     gdf_plot.plot(
         column="licences_annuelles_relatives",
         ax=ax,
@@ -232,7 +232,7 @@ def plot_evolution(data_complet, gdf_dep, annee1, annee2, sport="all", title=Non
     gdf_plot = gdf_dep.merge(df_merge, left_on="code", right_on="code_dep", how="left")
 
     # Affichage
-    fig, ax = plt.subplots(figsize=(10, 12))
+    fig, ax = plt.subplots(figsize=(10, 12)) # pylint: disable=W0612
     gdf_plot.plot(
         column="taux",
         ax=ax,
@@ -298,7 +298,7 @@ def widgets_licences(data_complet, gdf_dep, data_pop):
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
     out = widgets.Output()
 
-    def update(change=None):
+    def update(change=None): # pylint: disable=W0613
         with out:
             clear_output(wait=True)
             plot_licences(
@@ -351,7 +351,7 @@ def widgets_evolution(data_complet, gdf_dep):
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
     out = widgets.Output()
 
-    def update(change=None):
+    def update(change=None): # pylint: disable=W0613
         with out:
             clear_output(wait=True)
             plot_evolution(
@@ -637,7 +637,7 @@ def graph_decompo_sports_tranche_fine(df, annee="all"):
             "sport": "Sport",
             "tranche_age": "Tranche d'âge",
         },
-        title=f"Répartition proportionnelle des licenciés par sport et tranche d'âge fine – {titre_annee}",
+        title=f"Répartition des licenciés par sport et tranche d'âge fine – {titre_annee}",
     )
     fig.update_xaxes(ticksuffix="%")
     fig.update_layout(width=1000, height=800, xaxis=dict(range=[1, 100]))
@@ -677,7 +677,7 @@ def widgets_graph_evol_lic_age(data_complet):
     )
     out = widgets.Output()
 
-    def update(change=None):
+    def update(change=None): # pylint: disable=W0613
         with out:
             clear_output(wait=True)
             graph_evol_lic_age(data_complet, age=age_widget.value)
@@ -707,7 +707,7 @@ def widgets_graph_evol_lic_tranche_fine(data_complet):
     )
     out = widgets.Output()
 
-    def update(change=None):
+    def update(change=None): # pylint: disable=W0613
         with out:
             clear_output(wait=True)
             graph_evol_lic_tranche_fine_age(data_complet, tranche=tranche_widget.value)
@@ -737,7 +737,7 @@ def widgets_graph_decompo_sports_tranche_grande(data_complet):
     )
     out = widgets.Output()
 
-    def update(change=None):
+    def update(change=None): # pylint: disable=W0613
         with out:
             clear_output(wait=True)
             graph_decompo_sports_tranche_grande(data_complet, annee=annees_widget.value)
@@ -767,7 +767,7 @@ def widgets_graph_decompo_sports_tranche_fine(data_complet):
     )
     out = widgets.Output()
 
-    def update(change=None):
+    def update(change=None): # pylint: disable=W0613
         with out:
             clear_output(wait=True)
             graph_decompo_sports_tranche_fine(data_complet, annee=annees_widget.value)
