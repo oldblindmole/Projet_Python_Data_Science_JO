@@ -15,7 +15,6 @@ from IPython.display import display, clear_output
 
 # Chargement des données
 
-
 def charger_donnees(
     data_complet_path="data/data_complet.parquet",
     geojson_path="departements.geojson",
@@ -58,8 +57,7 @@ def charger_donnees(
 
 # Cartes par département
 
-
-def aggregate_by_year(df, year):
+def aggregation_par_an(df, year):
     """
     Agrège le nombre de licences par département pour une année donnée.
 
@@ -81,9 +79,10 @@ def aggregate_by_year(df, year):
     return df_year.groupby("code_dep")["licences_annuelles"].sum().reset_index()
 
 
-def plot_licences(data_complet, gdf_dep, data_pop, annee, sport="all", title=None):
+def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all", title=None):
     """
-    Affiche une carte de la proportion de licenciés par département.
+    Affiche une carte de la proportion de licenciés par département pour une année et
+    un sport donnés. La proportion est exprimée en pourcentage.
 
     La population utilisée dépend de l'année :
     - si annee <= 2021 : population 2016 (hypothèse de référence)
@@ -107,15 +106,16 @@ def plot_licences(data_complet, gdf_dep, data_pop, annee, sport="all", title=Non
 
     Retour
     ------
-    None
-        Affiche la carte via Matplotlib.
+    Carte matplotlib représentant le pourcentage de licenciés
+    par département.Les départements sans données sont indiqués
+    en gris clair avec un motif hachuré.
     """
-    # Filtrage éventuel du sport
+    # Filtrage des données selon le sport sélectionné
     df_filtered = (
         data_complet if sport == "all" else data_complet[data_complet["sport"] == sport]
     )
 
-    # Agrégation : total licences par département pour l'année choisie
+    # Agrégation des licences par département pour l'année choisie
     df_agg_lic = (
         df_filtered[df_filtered["annee"] == annee]
         .groupby("code_dep")["licences_annuelles"]
@@ -123,7 +123,7 @@ def plot_licences(data_complet, gdf_dep, data_pop, annee, sport="all", title=Non
         .reset_index()
     )
 
-    # Sélection de l'année de population (règle métier / convention du projet)
+    # Sélection de la population de référence selon l'année
     pop_ref_year = 2016 if annee <= 2021 else 2022
     df_pop = data_pop[data_pop["annee"] == pop_ref_year].copy()
 
@@ -143,8 +143,8 @@ def plot_licences(data_complet, gdf_dep, data_pop, annee, sport="all", title=Non
         gdf_plot["licences_annuelles"] / gdf_plot["population"]
     ) * 100
 
-    # Affichage
-    fig, ax = plt.subplots(figsize=(10, 12)) # pylint: disable=W0612
+    # Tracé
+    fig, ax = plt.subplots(figsize=(10, 12))  # pylint: disable=W0612
     gdf_plot.plot(
         column="licences_annuelles_relatives",
         ax=ax,
@@ -170,13 +170,20 @@ def plot_licences(data_complet, gdf_dep, data_pop, annee, sport="all", title=Non
         (title if title else f"Proportion de licenciés (%) {titre_sport} – {annee}"),
         fontsize=14,
     )
+
+    # Suppression des axes
     ax.set_axis_off()
+
+    # Affichage de la carte
     plt.show()
 
 
-def plot_evolution(data_complet, gdf_dep, annee1, annee2, sport="all", title=None):
+def carte_evolution_licencies(
+    data_complet, gdf_dep, annee1, annee2, sport="all", title=None
+):
     """
-    Affiche une carte du taux de croissance des licenciés par département.
+    Affiche une carte du taux de croissance des licenciés par département
+    entre deux années pour un sport donné.
 
     Le taux affiché est calculé comme :
         (L2 - L1) / L1
@@ -199,15 +206,16 @@ def plot_evolution(data_complet, gdf_dep, annee1, annee2, sport="all", title=Non
 
     Retour
     ------
-    None
-        Affiche la carte via Matplotlib.
+    Carte matplotlib représentant le taux de croissance des licenciés par
+    département. Les départements sans données sont indiqués en gris clair
+    avec un motif hachuré.
     """
-    # Filtrage du sport si nécessaire
+    # Filtrage des données selon le sport sélectionné
     df_filtered = (
         data_complet if sport == "all" else data_complet[data_complet["sport"] == sport]
     )
 
-    # Agrégations séparées par année
+    # Agrégation du nombre de licenciés par département pour chaque année
     df1 = (
         df_filtered[df_filtered["annee"] == annee1]
         .groupby("code_dep")["licences_annuelles"]
@@ -221,18 +229,20 @@ def plot_evolution(data_complet, gdf_dep, annee1, annee2, sport="all", title=Non
         .reset_index()
     )
 
-    # Fusion pour calculer le taux
+    # Fusion des deux années pour calculer le taux de croissance
     df_merge = df1.merge(df2, on="code_dep", suffixes=(f"_{annee1}", f"_{annee2}"))
+
+    # Calcul du taux de croissance
     df_merge["taux"] = (
         df_merge[f"licences_annuelles_{annee2}"]
         - df_merge[f"licences_annuelles_{annee1}"]
     ) / df_merge[f"licences_annuelles_{annee1}"]
 
-    # Jointure avec la géométrie
+    # Jointure avec la géométrie des départements
     gdf_plot = gdf_dep.merge(df_merge, left_on="code", right_on="code_dep", how="left")
 
-    # Affichage
-    fig, ax = plt.subplots(figsize=(10, 12)) # pylint: disable=W0612
+    # Tracé
+    fig, ax = plt.subplots(figsize=(10, 12))  # pylint: disable=W0612
     gdf_plot.plot(
         column="taux",
         ax=ax,
@@ -260,14 +270,17 @@ def plot_evolution(data_complet, gdf_dep, annee1, annee2, sport="all", title=Non
         (title if title else f"Taux de croissance {titre_sport} – {annee1}-{annee2}"),
         fontsize=16,
     )
+
+    # Suppression des axes
     ax.set_axis_off()
+
+    # Affichage de la carte
     plt.show()
 
 
 # Widgets pour cartes
 
-
-def widgets_licences(data_complet, gdf_dep, data_pop):
+def widgets_carte_licencies(data_complet, gdf_dep, data_pop):
     """
     Construit et affiche un widget interactif pour la carte de proportion de licenciés.
 
@@ -289,19 +302,27 @@ def widgets_licences(data_complet, gdf_dep, data_pop):
     None
         Affiche les widgets et la figure dans le notebook.
     """
+    # Années et sports disponibles
     annees = sorted(data_complet["annee"].dropna().unique())
     sports = ["all"] + sorted(data_complet["sport"].dropna().unique())
 
+    # Création des widgets Dropdown
     annee_widget = widgets.Dropdown(
         options=annees, description="Année :", value=annees[0]
     )
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
+
+    # Widget de sortie
     out = widgets.Output()
 
-    def update(change=None): # pylint: disable=W0613
+    # Fonction de mise à jour
+    def update(change=None):  # pylint: disable=W0613
+        """
+        Met à jour la carte interactive lorsque l'utilisateur change l'année ou le sport.
+        """
         with out:
             clear_output(wait=True)
-            plot_licences(
+            carte_licencies(
                 data_complet,
                 gdf_dep,
                 data_pop,
@@ -309,14 +330,16 @@ def widgets_licences(data_complet, gdf_dep, data_pop):
                 sport=sport_widget.value,
             )
 
+    # Liaison widgets - fonction
     annee_widget.observe(update, names="value")
     sport_widget.observe(update, names="value")
 
+    # Affichage initial
     display(annee_widget, sport_widget, out)
     update()
 
 
-def widgets_evolution(data_complet, gdf_dep):
+def widgets_evolution_licencies(data_complet, gdf_dep):
     """
     Construit et affiche un widget interactif pour la carte d'évolution des licenciés.
 
@@ -337,9 +360,11 @@ def widgets_evolution(data_complet, gdf_dep):
     None
         Affiche les widgets et la figure dans le notebook.
     """
+    # Années et sports disponibles
     annees = sorted(data_complet["annee"].dropna().unique())
     sports = ["all"] + sorted(data_complet["sport"].dropna().unique())
 
+    # Création des widgets Dropdown
     annee1_widget = widgets.Dropdown(
         options=annees, description="Année 1 :", value=annees[0]
     )
@@ -349,12 +374,18 @@ def widgets_evolution(data_complet, gdf_dep):
         value=annees[1] if len(annees) > 1 else annees[0],
     )
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
+
+    # Widget de sortie
     out = widgets.Output()
 
-    def update(change=None): # pylint: disable=W0613
+    # Fonction de mise à jour
+    def update(change=None):  # pylint: disable=W0613
+        """
+        Met à jour la carte interactive lorsque l'utilisateur change l'année ou le sport.
+        """
         with out:
             clear_output(wait=True)
-            plot_evolution(
+            carte_evolution_licencies(
                 data_complet,
                 gdf_dep,
                 annee1=annee1_widget.value,
@@ -362,18 +393,19 @@ def widgets_evolution(data_complet, gdf_dep):
                 sport=sport_widget.value,
             )
 
+    # Liaison widgets - fonction
     annee1_widget.observe(update, names="value")
     annee2_widget.observe(update, names="value")
     sport_widget.observe(update, names="value")
 
+    # Affichage initial
     display(annee1_widget, annee2_widget, sport_widget, out)
     update()
 
 
 # Graphiques par âge
 
-
-def graph_evol_lic_age(df, age="all"):
+def evolution_licencies_age(df, age="all"):
     """
     Trace l'évolution du nombre de licenciés par sport, en filtrant éventuellement un âge.
 
@@ -387,13 +419,13 @@ def graph_evol_lic_age(df, age="all"):
 
     Retour
     ------
-    None
-        Affiche le graphique Plotly.
+    Graphique interactif Plotly représentant le nombre de licenciés par sport
+    et par année pour l'âge sélectionné.
     """
-    # On retire les entrées "DIV" (divers) pour se concentrer sur les sports identifiés
+    # Suppression des entrées "DIV" (divers) pour se concentrer sur les sports identifiés
     df_clean = df[df["code_sport"] != "DIV"]
 
-    # Filtrage âge
+    # Filtrage par âge
     if age != "all":
         df_filtre = df_clean[df_clean["age"] == age]
         titre_age = f"{age} ans"
@@ -401,18 +433,20 @@ def graph_evol_lic_age(df, age="all"):
         df_filtre = df_clean
         titre_age = "tous les âges"
 
-    # Passage en table large puis format long pour Plotly
+    # Agrégation des licences par année et par sport
     table = (
         df_filtre.groupby(["annee", "sport"])["licences_annuelles"]
         .sum()
         .unstack()
         .sort_index()
     )
+
+    # Passage en table large puis format long pour Plotly
     table_long = table.reset_index().melt(
         id_vars="annee", var_name="sport", value_name="licences_annuelles"
     )
 
-    # Graphique
+    # Tracé
     fig = px.line(
         table_long,
         x="annee",
@@ -427,11 +461,15 @@ def graph_evol_lic_age(df, age="all"):
         },
         title=f"Évolution du nombre de licenciés de {titre_age} par sport",
     )
+
+    # Mise en forme du graphique
     fig.update_layout(width=1100, height=600)
+
+    # Affichage
     fig.show()
 
 
-def graph_evol_lic_tranche_fine_age(df, tranche="all"):
+def evolution_licences_tranches_fines_age(df, tranche="all"):
     """
     Trace l'évolution du nombre de licenciés par sport,
     en filtrant éventuellement une tranche d'âge fine.
@@ -447,15 +485,16 @@ def graph_evol_lic_tranche_fine_age(df, tranche="all"):
 
     Retour
     ------
-    None
-        Affiche le graphique Plotly.
+    Graphique interactif Plotly représentant le nombre de licenciés par sport
+    et par année pour la tranche d'âge sélectionnée.
     """
+    # Suppression des entrées "DIV" (divers) pour se concentrer sur les sports identifiés
     df_clean = df[df["code_sport"] != "DIV"]
 
-    # Filtrage tranche
+    # Filtrage par tranche d'âge
     if tranche != "all":
         df_filtre = df_clean[df_clean["tranche_age"] == tranche]
-        # Extraction d'un libellé plus lisible si le format est "XXX - ..."
+        # Extraction du libellé de la tranche pour le titre
         titre_age = df_filtre["tranche_age"].str[4:].unique()[0]
     else:
         df_filtre = df_clean
@@ -463,17 +502,20 @@ def graph_evol_lic_tranche_fine_age(df, tranche="all"):
 
     df_filtre = df_filtre.sort_values(["annee", "sport"])
 
-    # Passage en long pour Plotly
+    # Agrégation des licences par année et par sport
     table = (
         df_filtre.groupby(["annee", "sport"])["licences_annuelles"]
         .sum()
         .unstack()
         .sort_index()
     )
+
+    # Passage en long pour Plotly
     table_long = table.reset_index().melt(
         id_vars="annee", var_name="sport", value_name="licences_annuelles"
     )
 
+    # Tracé
     fig = px.line(
         table_long,
         x="annee",
@@ -488,11 +530,15 @@ def graph_evol_lic_tranche_fine_age(df, tranche="all"):
         },
         title=f"Évolution du nombre de licenciés {titre_age} par sport",
     )
+
+    # Mise en forme du graphique
     fig.update_layout(width=1200, height=650)
+
+    # Affichage
     fig.show()
 
 
-def graph_decompo_sports_tranche_grande(df, annee="all"):
+def repartition_grandes_tranches_age_par_sport(df, annee="all"):
     """
     Affiche la répartition (en %) des licenciés par sport et grande tranche d'âge.
 
@@ -566,7 +612,7 @@ def graph_decompo_sports_tranche_grande(df, annee="all"):
     fig.show()
 
 
-def graph_decompo_sports_tranche_fine(df, annee="all"):
+def repartition_fines_tranches_age_par_sport(df, annee="all"):
     """
     Affiche la répartition (en %) des licenciés par sport et tranche d'âge fine.
 
@@ -580,13 +626,14 @@ def graph_decompo_sports_tranche_fine(df, annee="all"):
 
     Retour
     ------
-    None
-        Affiche le graphique Plotly.
+    Graphique interactif Plotly représentant la répartition proportionnelle des licenciés 
+    par grande tranche d'âge pour chaque sport.
     """
+    # Filtrage selon l'année
     df_clean = df if annee == "all" else df[df["annee"] == annee]
     titre_annee = "2016-2024" if annee == "all" else annee
 
-    # Table sport x tranche fine -> effectifs
+    # Pivot pour obtenir les effectifs par sport et grande tranche d'âge
     df_pivot = df_clean.pivot_table(
         index="sport",
         columns="tranche_age",
@@ -595,15 +642,17 @@ def graph_decompo_sports_tranche_fine(df, annee="all"):
         fill_value=0,
     )
 
-    # Conversion en proportions + gestion des divisions par zéro
+    # Conversion en proportions et gestion des divisions par zéro
     df_prop = df_pivot.div(df_pivot.sum(axis=1), axis=0).fillna(0)
 
-    # Format long
+    # Transformation en format long pour Plotly
     df_long = df_prop.reset_index().melt(
         id_vars="sport", var_name="tranche_age", value_name="proportion"
     )
     df_long = df_long[df_long["tranche_age"].notna()]
     df_long["tranche_age"] = df_long["tranche_age"].astype(str)
+
+    # Conversion en pourcentage
     df_long["proportion"] = df_long["proportion"] * 100
 
     # Palette + ordre des catégories : NR à la fin (si présent)
@@ -615,6 +664,8 @@ def graph_decompo_sports_tranche_fine(df, annee="all"):
         px.colors.sequential.Plasma_r,
         [i / (n - 1) for i in range(n)] if n > 1 else [0.5],
     )
+
+    # Assigner les couleurs aux tranches (et NR en noir)
     palette_map = {t: c for t, c in zip(tranches_no_nr, colors)}
     if "NR - Non réparti" in tranches:
         palette_map["NR - Non réparti"] = "black"
@@ -623,6 +674,7 @@ def graph_decompo_sports_tranche_fine(df, annee="all"):
     if "NR - Non réparti" in tranches:
         tranches_ord.append("NR - Non réparti")
 
+    # Tracé
     fig = px.bar(
         df_long,
         x="proportion",
@@ -639,15 +691,18 @@ def graph_decompo_sports_tranche_fine(df, annee="all"):
         },
         title=f"Répartition des licenciés par sport et tranche d'âge fine – {titre_annee}",
     )
+
+    # Mise en forme de l'axe x et des dimensions
     fig.update_xaxes(ticksuffix="%")
     fig.update_layout(width=1000, height=800, xaxis=dict(range=[1, 100]))
+    
+    # Affichage
     fig.show()
 
 
 # Widgets pour les graphiques par âge
 
-
-def widgets_graph_evol_lic_age(data_complet):
+def widgets_evolution_licencies_age(data_complet):
     """
     Widget interactif pour afficher l'évolution des licenciés par âge exact.
 
@@ -661,33 +716,44 @@ def widgets_graph_evol_lic_age(data_complet):
     None
         Affiche un widget + le graphique Plotly associé.
     """
-    # On trie les âges numériques et on conserve "NR - Non réparti" à part
+    # Tri des les âges numériques, on conserve "NR - Non réparti" à part
     ages_numeric = sorted(
         [a for a in data_complet["age"].dropna().unique() if a != "NR - Non réparti"],
         key=int,
     )
+    # Ajout de "NR - Non réparti" à la fin si présent
     ages = ages_numeric + (
         ["NR - Non réparti"]
         if "NR - Non réparti" in data_complet["age"].unique()
         else []
     )
 
+    # Création du widget Dropdown
     age_widget = widgets.Dropdown(
         options=["all"] + ages, description="Age :", value="all"
     )
+
+    # Widget de sortie
     out = widgets.Output()
 
-    def update(change=None): # pylint: disable=W0613
+    # Fonction de mise à jour du graphique
+    def update(change=None):  # pylint: disable=W0613
+        """
+        Met à jour le graphique interactif lorsque l'utilisateur change l'âge sélectionné.
+        """
         with out:
             clear_output(wait=True)
-            graph_evol_lic_age(data_complet, age=age_widget.value)
+            evolution_licencies_age(data_complet, age=age_widget.value)
 
+    # Liaison du widget à la fonction de mise à jour
     age_widget.observe(update, names="value")
+
+    # Affichage initial
     display(age_widget, out)
     update()
 
 
-def widgets_graph_evol_lic_tranche_fine(data_complet):
+def widgets_evolution_licences_tranches_fines_age(data_complet):
     """
     Widget interactif pour afficher l'évolution des licenciés par tranche d'âge fine.
 
@@ -701,23 +767,35 @@ def widgets_graph_evol_lic_tranche_fine(data_complet):
     None
         Affiche un widget + le graphique Plotly associé.
     """
+    # Récupération et tri des tranches d'âge uniques
     tranches = sorted(data_complet["tranche_age"].dropna().unique())
+
+    # Création du widget Dropdown
     tranche_widget = widgets.Dropdown(
         options=["all"] + tranches, description="Tranche :", value="all"
     )
+
+    # Widget de sortie 
     out = widgets.Output()
 
-    def update(change=None): # pylint: disable=W0613
+    # Fonction de mise à jour du graphique
+    def update(change=None):  # pylint: disable=W0613
+        """
+        Met à jour le graphique interactif lorsque l'utilisateur change la tranche sélectionnée.
+        """
         with out:
             clear_output(wait=True)
-            graph_evol_lic_tranche_fine_age(data_complet, tranche=tranche_widget.value)
+            evolution_licences_tranches_fines_age(data_complet, tranche=tranche_widget.value)
 
+    # Liaison du widget à la fonction de mise à jour
     tranche_widget.observe(update, names="value")
+
+    # Affichage initial
     display(tranche_widget, out)
     update()
 
 
-def widgets_graph_decompo_sports_tranche_grande(data_complet):
+def widgets_repartition_grandes_tranches_age_par_sport(data_complet):
     """
     Widget interactif pour la répartition des licenciés par grande tranche d'âge.
 
@@ -731,23 +809,35 @@ def widgets_graph_decompo_sports_tranche_grande(data_complet):
     None
         Affiche un widget + le graphique Plotly associé.
     """
+    # Récupération des années uniques et triées
     annees = sorted(data_complet["annee"].dropna().unique())
+
+    # Création du widget Dropdown
     annees_widget = widgets.Dropdown(
         options=["all"] + list(annees), description="Année :", value="all"
     )
+
+    # Widget de sortie
     out = widgets.Output()
 
-    def update(change=None): # pylint: disable=W0613
+    # Fonction de mise à jour du graphique
+    def update(change=None):  # pylint: disable=W0613
+        """
+        Met à jour le graphique interactif lorsque l'utilisateur change l'année sélectionnée.
+        """
         with out:
             clear_output(wait=True)
-            graph_decompo_sports_tranche_grande(data_complet, annee=annees_widget.value)
+            repartition_grandes_tranches_age_par_sport(data_complet, annee=annees_widget.value)
 
+    # Liaison du widget à la fonction de mise à jour
     annees_widget.observe(update, names="value")
+
+    # Affichage initial
     display(annees_widget, out)
     update()
 
 
-def widgets_graph_decompo_sports_tranche_fine(data_complet):
+def widgets_repartition_fines_tranches_age_par_sport(data_complet):
     """
     Widget interactif pour la répartition des licenciés par tranche d'âge fine.
 
@@ -761,17 +851,29 @@ def widgets_graph_decompo_sports_tranche_fine(data_complet):
     None
         Affiche un widget + le graphique Plotly associé.
     """
+    # Récupération des années uniques et triées
     annees = sorted(data_complet["annee"].dropna().unique())
+
+    # Création du widget Dropdown
     annees_widget = widgets.Dropdown(
         options=["all"] + list(annees), description="Année :", value="all"
     )
+
+    # Widget de sortie pour afficher le graphique
     out = widgets.Output()
 
-    def update(change=None): # pylint: disable=W0613
+    # Fonction de mise à jour du graphique
+    def update(change=None):  # pylint: disable=W0613
+        """
+        Met à jour le graphique interactif lorsque l'utilisateur change l'année sélectionnée.
+        """
         with out:
             clear_output(wait=True)
-            graph_decompo_sports_tranche_fine(data_complet, annee=annees_widget.value)
+            repartition_fines_tranches_age_par_sport(data_complet, annee=annees_widget.value)
 
+    # Liaison du widget à la fonction de mise à jour
     annees_widget.observe(update, names="value")
+
+    # Affichage initial
     display(annees_widget, out)
     update()
