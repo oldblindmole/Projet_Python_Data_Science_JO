@@ -238,12 +238,10 @@ def reorganiser_colonnes():
                   "Lics_2023_semidef.parquet",
                   "Lics_2024_semidef.parquet"]
 
-    liste_fichiers_2 = [DATA_DIR / f for f in liste_fichiers]
-
-    ref_cols = pq.read_table(liste_fichiers_2[0]).column_names
+    ref_cols = pq.read_table(liste_fichiers[0]).column_names
     tables = []
 
-    for fichier in liste_fichiers_2:
+    for fichier in liste_fichiers:
         table = pq.read_table(fichier)
         table = table.select(ref_cols)
         tables.append(table)
