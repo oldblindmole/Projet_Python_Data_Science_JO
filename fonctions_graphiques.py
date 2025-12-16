@@ -15,6 +15,7 @@ from IPython.display import display, clear_output
 
 # Chargement des données
 
+
 def charger_donnees(
     data_complet_path="data/data_complet.parquet",
     geojson_path="departements.geojson",
@@ -56,6 +57,7 @@ def charger_donnees(
 
 
 # Cartes par département
+
 
 def aggregation_par_an(df, year):
     """
@@ -280,6 +282,7 @@ def carte_evolution_licencies(
 
 # Widgets pour cartes
 
+
 def widgets_carte_licencies(data_complet, gdf_dep, data_pop):
     """
     Construit et affiche un widget interactif pour la carte de proportion de licenciés.
@@ -404,6 +407,7 @@ def widgets_evolution_licencies(data_complet, gdf_dep):
 
 
 # Graphiques par âge
+
 
 def evolution_licencies_age(df, age="all"):
     """
@@ -626,7 +630,7 @@ def repartition_fines_tranches_age_par_sport(df, annee="all"):
 
     Retour
     ------
-    Graphique interactif Plotly représentant la répartition proportionnelle des licenciés 
+    Graphique interactif Plotly représentant la répartition proportionnelle des licenciés
     par grande tranche d'âge pour chaque sport.
     """
     # Filtrage selon l'année
@@ -695,12 +699,13 @@ def repartition_fines_tranches_age_par_sport(df, annee="all"):
     # Mise en forme de l'axe x et des dimensions
     fig.update_xaxes(ticksuffix="%")
     fig.update_layout(width=1000, height=800, xaxis=dict(range=[1, 100]))
-    
+
     # Affichage
     fig.show()
 
 
 # Widgets pour les graphiques par âge
+
 
 def widgets_evolution_licencies_age(data_complet):
     """
@@ -775,7 +780,7 @@ def widgets_evolution_licences_tranches_fines_age(data_complet):
         options=["all"] + tranches, description="Tranche :", value="all"
     )
 
-    # Widget de sortie 
+    # Widget de sortie
     out = widgets.Output()
 
     # Fonction de mise à jour du graphique
@@ -785,7 +790,9 @@ def widgets_evolution_licences_tranches_fines_age(data_complet):
         """
         with out:
             clear_output(wait=True)
-            evolution_licences_tranches_fines_age(data_complet, tranche=tranche_widget.value)
+            evolution_licences_tranches_fines_age(
+                data_complet, tranche=tranche_widget.value
+            )
 
     # Liaison du widget à la fonction de mise à jour
     tranche_widget.observe(update, names="value")
@@ -827,7 +834,9 @@ def widgets_repartition_grandes_tranches_age_par_sport(data_complet):
         """
         with out:
             clear_output(wait=True)
-            repartition_grandes_tranches_age_par_sport(data_complet, annee=annees_widget.value)
+            repartition_grandes_tranches_age_par_sport(
+                data_complet, annee=annees_widget.value
+            )
 
     # Liaison du widget à la fonction de mise à jour
     annees_widget.observe(update, names="value")
@@ -869,7 +878,9 @@ def widgets_repartition_fines_tranches_age_par_sport(data_complet):
         """
         with out:
             clear_output(wait=True)
-            repartition_fines_tranches_age_par_sport(data_complet, annee=annees_widget.value)
+            repartition_fines_tranches_age_par_sport(
+                data_complet, annee=annees_widget.value
+            )
 
     # Liaison du widget à la fonction de mise à jour
     annees_widget.observe(update, names="value")
