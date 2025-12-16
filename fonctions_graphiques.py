@@ -84,9 +84,6 @@ def plot_licences(data_complet, gdf_dep, data_pop, annee, sport="all", title=Non
     """
     Affiche une carte de la proportion de licenciés par département.
 
-    La métrique affichée est :
-        100 * licences_annuelles / population
-
     La population utilisée dépend de l'année :
     - si annee <= 2021 : population 2016 (hypothèse de référence)
     - sinon : population 2022
