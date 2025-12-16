@@ -1,3 +1,6 @@
 os
 pandas
 numpy
+pyarrow
+requests
+unicodedata

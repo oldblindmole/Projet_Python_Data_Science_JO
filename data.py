@@ -228,15 +228,15 @@ def reorganiser_colonnes():
     tables : list[pyarrow.Table].
         Liste des tables avec l'ordre des colonnes harmonisé.
     """
-    liste_fichiers = ["Lics_2016_semidef.parquet",
-                  "Lics_2017_semidef.parquet", 
-                  "Lics_2018_semidef.parquet",
-                  "Lics_2019_def.parquet",
-                  "Lics_2020_def.parquet",
-                  "Lics_2021_def.parquet",
-                  "Lics_2022_def.parquet",
-                  "Lics_2023_semidef.parquet",
-                  "Lics_2024_semidef.parquet"]
+    liste_fichiers = ["data/data_licences/Lics_2016_semidef.parquet",
+                  "data/data_licences/Lics_2017_semidef.parquet", 
+                  "data/data_licences/Lics_2018_semidef.parquet",
+                  "data/data_licences/Lics_2019_def.parquet",
+                  "data/data_licences/Lics_2020_def.parquet",
+                  "data/data_licences/Lics_2021_def.parquet",
+                  "data/data_licences/Lics_2022_def.parquet",
+                  "data/data_licences/Lics_2023_semidef.parquet",
+                  "data/data_licences/Lics_2024_semidef.parquet"]
 
     ref_cols = pq.read_table(liste_fichiers[0]).column_names
     tables = []
@@ -371,7 +371,7 @@ def renommer_colonnes(df):
     df.columns = ['code_2024', 'code_annee_n', 'codes_2016_2024', 'federation', 'annee',
        'sexe', 'age', 'tranche_age', 'grande_tranche_age', 'region',
        'departement_long', 'licences_annuelles', 'code_sport','code_dep']
- 
+
     return df
 
 def gel_licences(df, nom_fichier="data_licences.parquet"):
@@ -389,9 +389,9 @@ def gel_licences(df, nom_fichier="data_licences.parquet"):
     table = pa.Table.from_pandas(df)
     pq.write_table(table, chemin_sortie)
 
-def calcul_ratio_nr_annee(df, annee):
+def calcul_ratio_nr_annee(df, annee, var):
     """
-    Calcule le ratio de licenciés géographiquement 'Non Répartis' (NR) par année.
+    Calcule le ratio de licenciés 'Non Répartis' (NR) par année, pour la variable désirée.
 
     Paramètres
     ----------
@@ -402,39 +402,50 @@ def calcul_ratio_nr_annee(df, annee):
     Retour
     ------
     np.float(64)
-        Le ratio de licenciés non répartis géographiquement sur une année.
+        Le ratio de licenciés non répartis sur une année, pour la variable désirée.
     """
-    df_nr = df[df["code_dep"].isna()]
+    if var == "code_dep":
+        df_nr = df[df[var].isna()]
+    else:
+        df_nr = df[df[var] == "NR - Non réparti"]
     return df_nr["licences_annuelles"][df_nr["annee"] == annee].sum()/df["licences_annuelles"][df["annee"]==annee].sum()
 
-def calcul_ratio_nr(df):
+def calcul_ratio_nr(df, var:str):
     """
-    Calcule le ratio de licenciés géographiquement 'Non Répartis' (NR) dans toute la base.
+    Calcule le ratio de licenciés 'Non Répartis' (NR) dans toute la base, pour la variable désirée.
 
     Paramètres
     ----------
     df : pd.DataFrame
         Le DataFrame pandas contenant les colonnes 'code_dep' et 
         'licences_annuelles'.
+    var : str
+        Variable pour laquelle on désire calculer le ratio de non répartition. 
 
     Retour
     ------
     np.float(64)
-        Le ratio de licenciés non répartis géographiquement dans toute la base.
+        Le ratio de licenciés non répartis dans toute la base, pour la variable désirée.
     """
-    df_nr = df[df["code_dep"].isna()]
+    if var == "code_dep":
+        df_nr = df[df[var].isna()]
+    else:
+        df_nr = df[df[var] == "NR - Non réparti"]
     return df_nr["licences_annuelles"].sum()/df["licences_annuelles"].sum()
 
-def tableau_ratios_nr(df):
+def tableau_ratios_nr(df, var:str):
     """
-    Calcule et présente le ratio de licenciés géographiquement 'Non Répartis' (NR) par année et le ratio global 
-    sous forme de DataFrame Pandas.
+    Calcule et présente le ratio de licenciés 'Non Répartis' (NR) par année et le ratio global 
+    sous forme de DataFrame Pandas, pour la variable désirée.
 
     Paramètres
     ----------
     df : pd.DataFrame
         Le DataFrame pandas contenant les colonnes 'annee', 'code_dep' et 
         'licences_annuelles'.
+    var : str
+        Variable pour laquelle on désire calculer le ratio de non répartition. 
+
 
     Retour
     ------
@@ -444,16 +455,16 @@ def tableau_ratios_nr(df):
 
     resultats = {}
     annees = sorted(df["annee"].unique())
- 
+
     for a in annees:
-        ratio = calcul_ratio_nr_annee(df, a)
+        ratio = calcul_ratio_nr_annee(df, a, var)
         resultats[a] = [f"{ratio * 100:.2f} %"]
-     
-    ratio_global = calcul_ratio_nr(df)
+    
+    ratio_global = calcul_ratio_nr(df, var)
     resultats["Global"] = [f"{ratio_global * 100:.2f} %"]
+
+    df_ratios_nr = pd.DataFrame(resultats, index=[f"Ratio de non répartis {var}"])
  
-    df_ratios_nr = pd.DataFrame(resultats, index=["Ratio NR"])
-  
     return df_ratios_nr
 
 
