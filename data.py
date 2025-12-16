@@ -253,7 +253,7 @@ def reorganiser_colonnes():
                   "Lics_2022_def.parquet",
                   "Lics_2023_semidef.parquet",
                   "Lics_2024_semidef.parquet"]
-    
+
     liste_fichiers_2 = [DATA_DIR / f for f in liste_fichiers]
 
     ref_cols = pq.read_table(liste_fichiers_2[0]).column_names
@@ -265,22 +265,6 @@ def reorganiser_colonnes():
         tables.append(table)
 
     return tables
-
-def concatenation_gel(tables):
-    """
-    Concatène les tables en une base de données "long".
-
-    Paramètres
-    ----------
-    tables : list[pyarrow.Table].
-        Liste des tables à concaténer.
-
-    Retour
-    ------
-    pyarrow.Table
-        Table concaténée.
-    """
-    return pa.concat_tables(tables)
 
 def normalisation_unicode(table):
     """
