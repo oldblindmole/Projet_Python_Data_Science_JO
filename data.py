@@ -214,7 +214,7 @@ def gel_base_medailles_finale(filename="data_medailles_jo.csv"):
 
 #LICENCES
 
-def reorganiser_colonnes():
+def reorganiser_colonnes(liste_fichiers=None):
     """
     Réorganise les colonnes de tous les fichiers parquet
     selon l'ordre du premier fichier.
@@ -228,16 +228,6 @@ def reorganiser_colonnes():
     tables : list[pyarrow.Table].
         Liste des tables avec l'ordre des colonnes harmonisé.
     """
-    liste_fichiers = ["data/data_licences/Lics_2016_semidef.parquet",
-                  "data/data_licences/Lics_2017_semidef.parquet", 
-                  "data/data_licences/Lics_2018_semidef.parquet",
-                  "data/data_licences/Lics_2019_def.parquet",
-                  "data/data_licences/Lics_2020_def.parquet",
-                  "data/data_licences/Lics_2021_def.parquet",
-                  "data/data_licences/Lics_2022_def.parquet",
-                  "data/data_licences/Lics_2023_semidef.parquet",
-                  "data/data_licences/Lics_2024_semidef.parquet"]
-
     ref_cols = pq.read_table(liste_fichiers[0]).column_names
     tables = []
 
