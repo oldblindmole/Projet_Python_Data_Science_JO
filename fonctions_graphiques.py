@@ -58,6 +58,7 @@ def charger_donnees(
 
 # Cartes par département
 
+
 def aggregate_by_year(df, year):
     """
     Agrège le nombre de licences par département pour une année donnée.
@@ -158,12 +159,15 @@ def plot_licences(data_complet, gdf_dep, data_pop, annee, sport="all", title=Non
             "label": "Données manquantes",
         },
     )
+
+    # Titre
+    if sport == "all":
+        titre_sport = "(tous les sports)"
+    else:
+        titre_sport = f"({sport})"
+
     ax.set_title(
-        (
-            title
-            if title
-            else f"Proportion de licenciés (%) ({'tous les sports' if sport=='all' else sport}) – {annee}"
-        ),
+        (title if title else f"Proportion de licenciés (%) {titre_sport} – {annee}"),
         fontsize=14,
     )
     ax.set_axis_off()
@@ -245,12 +249,15 @@ def plot_evolution(data_complet, gdf_dep, annee1, annee2, sport="all", title=Non
             "label": "Données manquantes",
         },
     )
+
+    # Titre
+    if sport == "all":
+        titre_sport = "(tous les sports)"
+    else:
+        titre_sport = f"({sport})"
+
     ax.set_title(
-        (
-            title
-            if title
-            else f"Taux de croissance ({'tous les sports' if sport=='all' else sport}) – {annee1}-{annee2}"
-        ),
+        (title if title else f"Taux de croissance {titre_sport} – {annee1}-{annee2}"),
         fontsize=16,
     )
     ax.set_axis_off()
@@ -258,6 +265,7 @@ def plot_evolution(data_complet, gdf_dep, annee1, annee2, sport="all", title=Non
 
 
 # Widgets pour cartes
+
 
 def widgets_licences(data_complet, gdf_dep, data_pop):
     """
@@ -363,6 +371,7 @@ def widgets_evolution(data_complet, gdf_dep):
 
 
 # Graphiques par âge
+
 
 def graph_evol_lic_age(df, age="all"):
     """
@@ -504,7 +513,7 @@ def graph_decompo_sports_tranche_grande(df, annee="all"):
         Affiche le graphique Plotly.
     """
     df_clean = df if annee == "all" else df[df["annee"] == annee]
-    titre_annee = "2016-2024" if annee == "all" else annee
+    titre_an = "2016-2024" if annee == "all" else annee
 
     # Table sport x tranche -> effectifs
     df_pivot = df_clean.pivot_table(
@@ -550,7 +559,7 @@ def graph_decompo_sports_tranche_grande(df, annee="all"):
             "sport": "Sport",
             "grande_tranche_age": "Tranche d'âge",
         },
-        title=f"Répartition proportionnelle des licenciés par sport et grande tranche d'âge – {titre_annee}",
+        title=f"Répartition des licenciés par sport et grande tranche d'âge – {titre_an}",
     )
     fig.update_xaxes(ticksuffix="%")
     fig.update_layout(width=1000, height=800, xaxis=dict(range=[0, 100]))
@@ -636,6 +645,7 @@ def graph_decompo_sports_tranche_fine(df, annee="all"):
 
 
 # Widgets pour les graphiques par âge
+
 
 def widgets_graph_evol_lic_age(data_complet):
     """
