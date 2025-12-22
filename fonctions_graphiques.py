@@ -87,8 +87,8 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all", title=N
     un sport donnés. La proportion est exprimée en pourcentage.
 
     La population utilisée dépend de l'année :
-    - si annee <= 2021 : population 2016 (hypothèse de référence)
-    - sinon : population 2022
+    - si annee <= 2023 : population de l'année (hypothèse de référence)
+    - sinon : population 2023
 
     Paramètres
     ----------
@@ -126,7 +126,7 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all", title=N
     )
 
     # Sélection de la population de référence selon l'année
-    pop_ref_year = 2016 if annee <= 2021 else 2022
+    pop_ref_year = annee if annee <= 2023 else 2023
     df_pop = data_pop[data_pop["annee"] == pop_ref_year].copy()
 
     # Jointure géométrie + licences + population
