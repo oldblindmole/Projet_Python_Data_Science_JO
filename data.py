@@ -215,7 +215,7 @@ def gel_base_medailles_finale(filename="data_medailles_jo.csv"):
 
 # --- Données de Licences ---
 
-def reorganiser_colonnes():
+def reorganiser_colonnes(liste_fichiers):
     """
     Réorganise les colonnes de tous les fichiers parquet
     selon l'ordre du premier fichier.
@@ -229,16 +229,6 @@ def reorganiser_colonnes():
     tables : list[pyarrow.Table].
         Liste des tables avec l'ordre des colonnes harmonisé.
     """
-    liste_fichiers = ["data/data_licences/Lics_2016_semidef.parquet",
-                  "data/data_licences/Lics_2017_semidef.parquet", 
-                  "data/data_licences/Lics_2018_semidef.parquet",
-                  "data/data_licences/Lics_2019_def.parquet",
-                  "data/data_licences/Lics_2020_def.parquet",
-                  "data/data_licences/Lics_2021_def.parquet",
-                  "data/data_licences/Lics_2022_def.parquet",
-                  "data/data_licences/Lics_2023_semidef.parquet",
-                  "data/data_licences/Lics_2024_semidef.parquet"]
-
     ref_cols = pq.read_table(liste_fichiers[0]).column_names
     tables = []
 
@@ -502,7 +492,6 @@ def melodi_extraction(url_api):
     data = json.loads(data_from_net)
 
     # Extraction des informations du jeu de données
-    title = data['title']['fr']
     identifier = data['identifier']
 
     #Extraction des observations du jeu de données filtré, sur lesquelles on va boucler
@@ -536,7 +525,27 @@ def melodi_extraction(url_api):
     #Création d'un dataframe pandas
     data_pop = pd.DataFrame(extracted_data)
 
-    print(f'Jeu de données : {identifier} \nTitre : {title} ')
+    print(f'Jeu de données : {identifier} \nTitre : Populations municipales de 2016 à 2023 ')
+
+    return data_pop
+
+def code_dep_pop(data_pop, var):
+    """
+    Extrait le code département à partir de la variable de département de la base de population départementale annuelle.
+    
+    Paramètres 
+    ----------
+    data_pop : pd.DataFrame
+        Data frame de population avec colonnes renommmées. 
+    var : str
+        Variable à partir de laquelle extraire le code département
+
+    Retour
+    ------
+    data_pop : pd.DataFrame
+        Data frame de population annuelle avec la nouvelle variable "code_dep"
+    """
+    data_pop["code_dep"] = data_pop[var].str.extract(r'(..)$') #numéro du département : deux derniers caractères
 
     return data_pop
 
@@ -572,26 +581,6 @@ def clean_population(df):
     data_pop_clean["code_dep"] = data_pop_clean["code_dep"].astype(str)
 
     return data_pop_clean
-
-def code_dep_pop(data_pop, var):
-    """
-    Extrait le code département à partir de la variable de département de la base de population départementale annuelle.
-    
-    Paramètres 
-    ----------
-    data_pop : pd.DataFrame
-        Data frame de population avec colonnes renommmées. 
-    var : str
-        Variable à partir de laquelle extraire le code département (extraction des deux derniers caractères)
-
-    Retour
-    ------
-    data_pop : pd.DataFrame
-        Data frame de population annuelle avec la nouvelle variable "code_dep"
-    """
-    data_pop["code_dep"] = data_pop[var].str.extract(r'(..)$')
-
-    return data_pop
 
 def gel_population(df, nom_fichier="population_dept.csv"):
     """
