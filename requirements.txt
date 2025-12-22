@@ -4,3 +4,4 @@ numpy
 pyarrow
 requests
 unicodedata
+json

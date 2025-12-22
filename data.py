@@ -7,6 +7,7 @@ le notebook principal (main.ipynb).
 
 import os
 import unicodedata
+import json
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -212,7 +213,7 @@ def gel_base_medailles_finale(filename="data_medailles_jo.csv"):
 
     return data_medailles
 
-#LICENCES
+# --- Données de Licences ---
 
 def reorganiser_colonnes(liste_fichiers=None):
     """
@@ -240,7 +241,7 @@ def reorganiser_colonnes(liste_fichiers=None):
 
 def normalisation_unicode(table):
     """
-    Normalise les caractères en unicode dans une table.
+    Normalise les caractères en unicode dans une table et renvoie un data frame pandas.
 
     Paramètres
     ----------
@@ -254,7 +255,7 @@ def normalisation_unicode(table):
     """
     df = table.to_pandas()
 
-    #normalisation des caractères en unicode
+    #normalisation des caractères en unicode pour les variables de fédération
     df["Fédération"] = df["Fédération"].apply(
         lambda x: unicodedata.normalize("NFKC", str(x))
     )
@@ -280,6 +281,7 @@ def code_sport(df):
     df : pd.DataFrame
         Dataframe pandas avec la nouvelle colonne code_sport.
     """
+    #liste de codes sport dont l'ordre correspond à celui de la liste des fédérations.
     code_list = ["ATH", "AVI", "BAD", "BAK",
              "BOX", "CAK", "CYC", "EQU", 
              "ESC", "FOO", "DIV", "GYM", 
@@ -311,22 +313,24 @@ def code_sport(df):
              "DIV", "DIV", "DIV", "DIV", 
              "DIV", "DIV"]
 
+    #appariement des fédérations avec le bon code sport. 
     fed_list = df["Fédération"].unique()
     cs = pd.DataFrame({
         "Fédération": fed_list,
         "Code_sport": code_list
         })
 
+    #left merge avec la base complète.
     df = df.merge(
-    cs,
-    left_on = ["Fédération"],
-    right_on = ["Fédération"],
-    how = "left"
+        cs,
+        left_on = ["Fédération"],
+        right_on = ["Fédération"],
+        how = "left"
     )
 
     return df
 
-def code_dep(df):
+def code_dep(df, var):
     """
     Crée un code département avec seulement leur numéro.
 
@@ -334,13 +338,15 @@ def code_dep(df):
     ----------
     df : pd.DataFrame
         Data frame pandas auquel ajouter le code département.
+    var : str
+        Variable de laquelle extraire le code département.
 
     Retour
     ------
     df : pd.DataFrame
         Dataframe pandas avec la nouvelle colonne code_dep.
     """
-    df["code_dep"] = df["Département"].str.extract(r"^(\d{2,3}|2A|2B)")
+    df["code_dep"] = df[var].str.extract(r"^(\d{2,3}|2A|2B)")
 
     return df
 
@@ -394,10 +400,13 @@ def calcul_ratio_nr_annee(df, annee, var):
     np.float(64)
         Le ratio de licenciés non répartis sur une année, pour la variable désirée.
     """
+    
+    #création d'un data frame sélectionnant les effectifs non répartis 
     if var == "code_dep":
-        df_nr = df[df[var].isna()]
+        df_nr = df[df[var].isna()] #les "non répartis" sont inscrits en NaN pour le code département
     else:
         df_nr = df[df[var] == "NR - Non réparti"]
+
     return df_nr["licences_annuelles"][df_nr["annee"] == annee].sum()/df["licences_annuelles"][df["annee"]==annee].sum()
 
 def calcul_ratio_nr(df, var:str):
@@ -417,10 +426,12 @@ def calcul_ratio_nr(df, var:str):
     np.float(64)
         Le ratio de licenciés non répartis dans toute la base, pour la variable désirée.
     """
+
+    #création d'un data frame sélectionnant les effectifs non répartis
     if var == "code_dep":
-        df_nr = df[df[var].isna()]
+        df_nr = df[df[var].isna()] #les "non répartis" sont inscrits en NaN pour le code département
     else:
-        df_nr = df[df[var] == "NR - Non réparti"]
+        df_nr = df[df[var] == "NR - Non réparti"] 
     return df_nr["licences_annuelles"].sum()/df["licences_annuelles"].sum()
 
 def tableau_ratios_nr(df, var:str):
@@ -446,15 +457,140 @@ def tableau_ratios_nr(df, var:str):
     resultats = {}
     annees = sorted(df["annee"].unique())
 
+    #calcul du ratio pour chaque année
     for a in annees:
         ratio = calcul_ratio_nr_annee(df, a, var)
         resultats[a] = [f"{ratio * 100:.2f} %"]
-    
+   
+    #calcul du ratio global
     ratio_global = calcul_ratio_nr(df, var)
     resultats["Global"] = [f"{ratio_global * 100:.2f} %"]
 
+    #création d'un data frame pour présenter proprement les résultats
     df_ratios_nr = pd.DataFrame(resultats, index=[f"Ratio de non répartis {var}"])
- 
+
     return df_ratios_nr
 
+# --- Données de population départementale ---
 
+def melodi_extraction(url_api):
+    """
+    Extrait les données de population au niveau départemental pour les années disponibles dans l'API Melodi. 
+
+    Paramètres
+    ----------
+    url_api : url 
+        URL de l'API à interroger.
+
+    Retour
+    ------
+    data_pop : pd.DataFrame
+        Data frame recensant la population départementale pour les années disponibles. 
+    """
+    get_data = requests.get(url_api, verify=True, timeout = 60)
+    data_from_net = get_data.content
+    data = json.loads(data_from_net)
+
+    # Extraction des informations du jeu de données
+    title = data['title']['fr']
+    identifier = data['identifier']
+
+    #Extraction des observations du jeu de données filtré, sur lesquelles on va boucler
+    observations = data['observations']
+    extracted_data = []
+
+    #Boucle de lecture des observations dans le json
+    for obs in observations:
+        dimensions = obs['dimensions']
+
+    #Suivant les jeux de données attributes est présent ou non
+        if 'attributes' in obs:
+            attributes = obs['attributes']
+        else:
+            attributes = None
+
+    #Suivant les jeux de données value peut être absent
+        if 'value' in obs['measures']['OBS_VALUE_NIVEAU']:
+            measures = obs['measures']['OBS_VALUE_NIVEAU']['value']
+        else:
+            measures = None
+
+    #Rassemble tout dans un objet
+        if 'attributes' in obs:
+            combined_data = {**dimensions,**attributes, 'OBS_VALUE_NIVEAU': measures}
+        else:
+            combined_data = {**dimensions, 'OBS_VALUE_NIVEAU': measures}
+
+        extracted_data.append(combined_data)
+
+    #Création d'un dataframe pandas
+    data_pop = pd.DataFrame(extracted_data)
+
+    print(f'Jeu de données : {identifier} \nTitre : {title} ')
+
+    return data_pop
+
+def clean_population(df):
+    """
+    Nettoie la base de données de population : 
+        Force les types des variables
+        Sélectionne les départements cartographiables
+        Trie les départements par ordre croissant
+    
+    Paramètres
+    ----------
+    df : pd.DataFrame 
+        Data frame de population devant être nettoyé. 
+    
+    Retour
+    ------
+    data_pop_clean : pd.DataFrame 
+        Data frame de population nottoyé. 
+    """
+    data_pop_clean = df.copy()
+
+    #Conversion de l'année en entier
+    data_pop_clean["annee"] = data_pop_clean["annee"].astype(int)
+
+    #Tri des départements
+    data_pop_clean = data_pop_clean.sort_values(by="code_dep", ascending=True).reset_index(drop=True)
+
+    #Suppression des départements non cartographiables
+    data_pop_clean = data_pop_clean.dropna(subset=["code_dep"]).copy()
+
+    #Conversion du code département en string
+    data_pop_clean["code_dep"] = data_pop_clean["code_dep"].astype(str)
+
+    return data_pop_clean
+
+def code_dep_pop(data_pop, var):
+    """
+    Extrait le code département à partir de la variable de département de la base de population départementale annuelle.
+    
+    Paramètres 
+    ----------
+    data_pop : pd.DataFrame
+        Data frame de population avec colonnes renommmées. 
+    var : str
+        Variable à partir de laquelle extraire le code département (extraction des deux derniers caractères)
+
+    Retour
+    ------
+    data_pop : pd.DataFrame
+        Data frame de population annuelle avec la nouvelle variable "code_dep"
+    """
+    data_pop["code_dep"] = data_pop[var].str.extract(r'(..)$')
+
+    return data_pop
+
+def gel_population(df, nom_fichier="population_dept.csv"):
+    """
+    Gel de la base de population départementale en CSV.
+
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        Base de données à geler.
+    """
+    output_path = os.path.join(DATA_DIR, nom_fichier)
+    df.to_csv(output_path, index=False)
