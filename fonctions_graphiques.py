@@ -9,6 +9,8 @@ import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 
@@ -54,6 +56,140 @@ def charger_donnees(
     data_pop = pd.read_csv(population_path)
 
     return data_complet, gdf_dep, data_pop
+
+
+# Evolution des licenciés selon le nombre de medailles
+def _table_licences_par_sport_annee(df: pd.DataFrame, sport: str) -> pd.DataFrame:
+    d = df if sport == "all" else df[df["sport"] == sport]
+    lic = (
+        d.groupby("annee", as_index=False)["licences_annuelles"]
+        .sum()
+        .sort_values("annee")
+    )
+    return lic
+
+def _medailles_par_sport(df: pd.DataFrame, sport: str) -> dict:
+    """
+    Retourne un dict {2016: {'or':x,'argent':y,'bronze':z}, 2020:..., 2024:...}
+    """
+    cols_needed = [
+        "sport",
+        "2016_or","2016_argent","2016_bronze",
+        "2020_or","2020_argent","2020_bronze",
+        "2024_or","2024_argent","2024_bronze",
+    ]
+    cols_needed = [c for c in cols_needed if c in df.columns]
+    med = df[cols_needed].drop_duplicates(subset=["sport"]).copy()
+    med = med.groupby("sport", as_index=False).first()
+
+    row = med[med["sport"] == sport]
+    if row.empty:
+        return {2016: {"or": 0, "argent": 0, "bronze": 0},
+                2020: {"or": 0, "argent": 0, "bronze": 0},
+                2024: {"or": 0, "argent": 0, "bronze": 0}}
+
+    row = row.iloc[0]
+    def get(col):
+        return 0 if (col not in med.columns or pd.isna(row[col])) else int(row[col])
+
+    return {
+        2016: {"or": get("2016_or"), "argent": get("2016_argent"), "bronze": get("2016_bronze")},
+        2020: {"or": get("2020_or"), "argent": get("2020_argent"), "bronze": get("2020_bronze")},
+        2024: {"or": get("2024_or"), "argent": get("2024_argent"), "bronze": get("2024_bronze")},
+    }
+
+def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
+    """
+    - x : années
+    - y1 : licences (courbe)
+    - y2 : médailles (barres empilées or/argent/bronze) uniquement 2016/2020/2024
+    """
+    lic = _table_licences_par_sport_annee(df, sport)
+
+    # Années affichées = années présentes dans les licences (plus lisible)
+    years = lic["annee"].tolist()
+
+    # Médailles : seulement années olympiques, 0 sinon
+    medals = {y: {"or": 0, "argent": 0, "bronze": 0} for y in years}
+    if sport != "all":
+        med_s = _medailles_par_sport(df, sport)
+        for y in [2016, 2020, 2024]:
+            if y in medals:
+                medals[y] = med_s.get(y, {"or": 0, "argent": 0, "bronze": 0})
+
+    med_or = [medals[y]["or"] for y in years]
+    med_arg = [medals[y]["argent"] for y in years]
+    med_bro = [medals[y]["bronze"] for y in years]
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Courbe licences (axe gauche)
+    fig.add_trace(
+        go.Scatter(
+            x=years,
+            y=lic["licences_annuelles"],
+            mode="lines+markers",
+            name="Licenciés",
+            hovertemplate="Année: %{x}<br>Licenciés: %{y:,}<extra></extra>",
+        ),
+        secondary_y=False,
+    )
+
+    # Barres médailles (axe droit), empilées
+    fig.add_trace(
+        go.Bar(
+            x=years, y=med_or, name="Or",
+            marker_color="#F2C300",  # jaune
+            hovertemplate="Année: %{x}<br>Or: %{y}<extra></extra>",
+        ),
+        secondary_y=True,
+    )
+    fig.add_trace(
+        go.Bar(
+            x=years, y=med_arg, name="Argent",
+            marker_color="#B0B0B0",  # gris
+            hovertemplate="Année: %{x}<br>Argent: %{y}<extra></extra>",
+        ),
+        secondary_y=True,
+    )
+    fig.add_trace(
+        go.Bar(
+            x=years, y=med_bro, name="Bronze",
+            marker_color="#8C6239",  # brun
+            hovertemplate="Année: %{x}<br>Bronze: %{y}<extra></extra>",
+        ),
+        secondary_y=True,
+    )
+
+    titre = "Tous sports" if sport == "all" else sport
+    fig.update_layout(
+        title=f"Évolution des licenciés et médailles – {titre}",
+        width=1100,
+        height=600,
+        barmode="stack",
+        legend_title_text="Légende",
+        hovermode="x unified",
+    )
+    fig.update_xaxes(title_text="Années")
+    fig.update_yaxes(title_text="Nombre de licenciés", secondary_y=False)
+    fig.update_yaxes(title_text="Nombre de médailles", secondary_y=True)
+
+    fig.show()
+
+def widget_graphique_licences_et_medailles(data_complet: pd.DataFrame):
+    """#TODO"""
+    sports = ["all"] + sorted(data_complet["sport"].dropna().unique())
+    sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
+    out = widgets.Output()
+
+    def update(change=None):  # pylint: disable=W0613
+        with out:
+            clear_output(wait=True)
+            graphique_licences_et_medailles(data_complet, sport=sport_widget.value)
+
+    sport_widget.observe(update, names="value")
+    display(sport_widget, out)
+    update()
 
 
 # Cartes par département
