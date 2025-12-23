@@ -5,6 +5,7 @@ Ce module est conçu pour être importé et utilisé depuis le notebook
 principal (main.ipynb).
 """
 
+import re
 import pandas as pd
 import numpy as np
 import geopandas as gpd
@@ -19,6 +20,7 @@ from IPython.display import display, clear_output
 
 
 # helpers
+
 
 def _filtrer_sport(df: pd.DataFrame, sport: str):
     """Retourne df filtré sur un sport, ou df inchangé si sport == 'all'."""
@@ -50,13 +52,11 @@ def _run_widget(update_fn, controls):
             if res is not None:
                 display(res)
 
-
     for c in controls:
         c.observe(_wrapped_update, names="value")
 
     display(*controls, out)
     _wrapped_update()
-
 
 
 # II. Chargement des données
@@ -144,7 +144,9 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     # On ne trace des médailles que pour un sport spécifique (pas "all")
     if sport != "all":
         # Récupère UNE ligne par sport pour les colonnes médailles
-        cols_needed = ["sport"] + [f"{y}_{m}" for y in jo_col_years for m in medal_types]
+        cols_needed = ["sport"] + [
+            f"{y}_{m}" for y in jo_col_years for m in medal_types
+        ]
         cols_needed = [c for c in cols_needed if c in df.columns]  # sécurité
 
         med = (
@@ -164,7 +166,11 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
                 if y_display in medals_by_year:
                     for m in medal_types:
                         col = f"{y_col}_{m}"
-                        val = 0 if (col not in med.columns or pd.isna(row[col])) else int(row[col])
+                        val = (
+                            0
+                            if (col not in med.columns or pd.isna(row[col]))
+                            else int(row[col])
+                        )
                         medals_by_year[y_display][m] = val
 
     med_or = [medals_by_year[y]["or"] for y in years]
@@ -188,18 +194,33 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
 
     # Barres médailles (axe droit) empilées
     fig.add_trace(
-        go.Bar(x=years, y=med_or, name="Or", marker_color=medal_colors["or"],
-               hovertemplate="Année: %{x}<br>Or: %{y}<extra></extra>"),
+        go.Bar(
+            x=years,
+            y=med_or,
+            name="Or",
+            marker_color=medal_colors["or"],
+            hovertemplate="Année: %{x}<br>Or: %{y}<extra></extra>",
+        ),
         secondary_y=True,
     )
     fig.add_trace(
-        go.Bar(x=years, y=med_arg, name="Argent", marker_color=medal_colors["argent"],
-               hovertemplate="Année: %{x}<br>Argent: %{y}<extra></extra>"),
+        go.Bar(
+            x=years,
+            y=med_arg,
+            name="Argent",
+            marker_color=medal_colors["argent"],
+            hovertemplate="Année: %{x}<br>Argent: %{y}<extra></extra>",
+        ),
         secondary_y=True,
     )
     fig.add_trace(
-        go.Bar(x=years, y=med_bro, name="Bronze", marker_color=medal_colors["bronze"],
-               hovertemplate="Année: %{x}<br>Bronze: %{y}<extra></extra>"),
+        go.Bar(
+            x=years,
+            y=med_bro,
+            name="Bronze",
+            marker_color=medal_colors["bronze"],
+            hovertemplate="Année: %{x}<br>Bronze: %{y}<extra></extra>",
+        ),
         secondary_y=True,
     )
 
@@ -225,8 +246,7 @@ def widget_graphique_licences_et_medailles(data_complet: pd.DataFrame):
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
 
     def update():
-        fig = graphique_licences_et_medailles(data_complet, sport=sport_widget.value)
-        display(fig)
+        return graphique_licences_et_medailles(data_complet, sport=sport_widget.value)
 
     _run_widget(update, [sport_widget])
 
@@ -385,25 +405,25 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
         if (df_s["annee"] == annee_lic).any() and (
             df_s["annee"] == annee_lic_plus_delta
         ).any():
-            L_t = float(
+            l_t = float(
                 df_s.loc[df_s["annee"] == annee_lic, "licences_annuelles"].iloc[0]
             )
-            L_t_delta = float(
+            l_t_delta = float(
                 df_s.loc[
                     df_s["annee"] == annee_lic_plus_delta, "licences_annuelles"
                 ].iloc[0]
             )
 
             # Sécurité : éviter une division par zéro
-            if L_t > 0:
+            if l_t > 0:
                 rows.append(
                     {
                         "sport": sport,
                         "annee_jo": annee_jo,
                         "annee_licences_t": annee_lic,
-                        "licences_t": L_t,
-                        "licences_t_plus_2": L_t_delta,
-                        "taux_croissance": 100 * (L_t_delta - L_t) / L_t,
+                        "licences_t": l_t,
+                        "licences_t_plus_2": l_t_delta,
+                        "taux_croissance": 100 * (l_t_delta - l_t) / l_t,
                     }
                 )
 
@@ -494,9 +514,7 @@ def licences_par_annee(df_lic, sport_code="all", sport_col="code_sport"):
     return fig
 
 
-def widget_licences_par_sport(
-    df, sport_name_col="sport", sport_code_col="code_sport"
-):
+def widget_licences_par_sport(df, sport_name_col="sport", sport_code_col="code_sport"):
     """
     Crée un widget interactif (Dropdown) permettant de sélectionner un sport
     et d'afficher le graphique correspondant via la fonction `plot_licences_par_annee`.
@@ -528,37 +546,31 @@ def widget_licences_par_sport(
         description="Sports :",
         value="all",
     )
-    out = widgets.Output()
-
 
     def update_graph(change=None):  # pylint: disable=W0613
         """
         Met à jour le graphique lorsque l'utilisateur change le sport sélectionné.
         """
-        with out:
-            clear_output(wait=True)
+        selected_sport = sports_widget.value
 
-            selected_sport = sports_widget.value
+        # Cas 1 : tous sports
+        if selected_sport == "all":
+            return licences_par_annee(df, sport_code="all", sport_col=sport_code_col)
 
-            # Cas 1 : tous sports
-            if selected_sport == "all":
-                licences_par_annee(df, sport_code="all", sport_col=sport_code_col)
-                return
+        # Cas 2 : un sport spécifique -> conversion nom -> code(s)
+        codes = (
+            df.loc[df[sport_name_col] == selected_sport, sport_code_col]
+            .dropna()
+            .unique()
+        )
 
-            # Cas 2 : un sport spécifique -> conversion nom -> code(s)
-            codes = (
-                df.loc[df[sport_name_col] == selected_sport, sport_code_col]
-                .dropna()
-                .unique()
-            )
+        if len(codes) == 0:
+            print(f"Aucun code sport trouvé pour : {selected_sport}")
+            return None
 
-            if len(codes) == 0:
-                print(f"Aucun code sport trouvé pour : {selected_sport}")
-                return
+        sport_code = codes[0] if len(codes) == 1 else list(codes)
 
-            sport_code = codes[0] if len(codes) == 1 else list(codes)
-
-            licences_par_annee(df, sport_code=sport_code, sport_col=sport_code_col)
+        return licences_par_annee(df, sport_code=sport_code, sport_col=sport_code_col)
 
     _run_widget(update_graph, [sports_widget])
 
@@ -777,7 +789,6 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
     # Filtrage des données selon le sport sélectionné
     df_filtered = _filtrer_sport(data_complet, sport)
 
-
     # Agrégation du nombre de licenciés par département pour chaque année
     df1 = (
         df_filtered[df_filtered["annee"] == annee1]
@@ -876,23 +887,18 @@ def widgets_carte_licencies(data_complet, gdf_dep, data_pop):
     )
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
 
-    # Widget de sortie
-    out = widgets.Output()
-
     # Fonction de mise à jour
     def update(change=None):  # pylint: disable=W0613
         """
         Met à jour la carte interactive lorsque l'utilisateur change l'année ou le sport.
         """
-        with out:
-            clear_output(wait=True)
-            carte_licencies(
-                data_complet,
-                gdf_dep,
-                data_pop,
-                annee=annee_widget.value,
-                sport=sport_widget.value,
-            )
+        carte_licencies(
+            data_complet,
+            gdf_dep,
+            data_pop,
+            annee=annee_widget.value,
+            sport=sport_widget.value,
+        )
 
     _run_widget(update, [annee_widget, sport_widget])
 
@@ -933,23 +939,18 @@ def widgets_evolution_licencies(data_complet, gdf_dep):
     )
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
 
-    # Widget de sortie
-    out = widgets.Output()
-
     # Fonction de mise à jour
     def update(change=None):  # pylint: disable=W0613
         """
         Met à jour la carte interactive lorsque l'utilisateur change l'année ou le sport.
         """
-        with out:
-            clear_output(wait=True)
-            carte_evolution_licencies(
-                data_complet,
-                gdf_dep,
-                annee1=annee1_widget.value,
-                annee2=annee2_widget.value,
-                sport=sport_widget.value,
-            )
+        carte_evolution_licencies(
+            data_complet,
+            gdf_dep,
+            annee1=annee1_widget.value,
+            annee2=annee2_widget.value,
+            sport=sport_widget.value,
+        )
 
     _run_widget(update, [annee1_widget, annee2_widget, sport_widget])
 
@@ -1355,17 +1356,12 @@ def widgets_evolution_licencies_age(data_complet):
         options=["all"] + ages, description="Age :", value="all"
     )
 
-    # Widget de sortie
-    out = widgets.Output()
-
     # Fonction de mise à jour du graphique
     def update(change=None):  # pylint: disable=W0613
         """
         Met à jour le graphique interactif lorsque l'utilisateur change l'âge sélectionné.
         """
-        with out:
-            clear_output(wait=True)
-            evolution_licencies_age(data_complet, age=age_widget.value)
+        return evolution_licencies_age(data_complet, age=age_widget.value)
 
     _run_widget(update, [age_widget])
 
@@ -1392,19 +1388,14 @@ def widgets_evolution_licences_tranches_fines_age(data_complet):
         options=["all"] + tranches, description="Tranche :", value="all"
     )
 
-    # Widget de sortie
-    out = widgets.Output()
-
     # Fonction de mise à jour du graphique
     def update(change=None):  # pylint: disable=W0613
         """
         Met à jour le graphique interactif lorsque l'utilisateur change la tranche sélectionnée.
         """
-        with out:
-            clear_output(wait=True)
-            evolution_licences_tranches_fines_age(
-                data_complet, tranche=tranche_widget.value
-            )
+        return evolution_licences_tranches_fines_age(
+            data_complet, tranche=tranche_widget.value
+        )
 
     _run_widget(update, [tranche_widget])
 
@@ -1431,19 +1422,14 @@ def widgets_evolution_licences_tranches_grande_age(data_complet):
         options=["all"] + tranches, description="Tranche :", value="all"
     )
 
-    # Widget de sortie
-    out = widgets.Output()
-
     # Fonction de mise à jour du graphique
     def update(change=None):  # pylint: disable=W0613
         """
         Met à jour le graphique interactif lorsque l'utilisateur change la tranche sélectionnée.
         """
-        with out:
-            clear_output(wait=True)
-            evolution_licences_tranches_grandes_age(
-                data_complet, tranche=tranche_widget.value
-            )
+        return evolution_licences_tranches_grandes_age(
+            data_complet, tranche=tranche_widget.value
+        )
 
     _run_widget(update, [tranche_widget])
 
@@ -1470,19 +1456,14 @@ def widgets_repartition_grandes_tranches_age_par_sport(data_complet):
         options=["all"] + list(annees), description="Année :", value="all"
     )
 
-    # Widget de sortie
-    out = widgets.Output()
-
     # Fonction de mise à jour du graphique
     def update(change=None):  # pylint: disable=W0613
         """
         Met à jour le graphique interactif lorsque l'utilisateur change l'année sélectionnée.
         """
-        with out:
-            clear_output(wait=True)
-            repartition_grandes_tranches_age_par_sport(
-                data_complet, annee=annees_widget.value
-            )
+        return repartition_grandes_tranches_age_par_sport(
+            data_complet, annee=annees_widget.value
+        )
 
     _run_widget(update, [annees_widget])
 
@@ -1509,18 +1490,347 @@ def widgets_repartition_fines_tranches_age_par_sport(data_complet):
         options=["all"] + list(annees), description="Année :", value="all"
     )
 
-    # Widget de sortie pour afficher le graphique
-    out = widgets.Output()
-
     # Fonction de mise à jour du graphique
     def update(change=None):  # pylint: disable=W0613
         """
         Met à jour le graphique interactif lorsque l'utilisateur change l'année sélectionnée.
         """
-        with out:
-            clear_output(wait=True)
-            repartition_fines_tranches_age_par_sport(
-                data_complet, annee=annees_widget.value
-            )
+        return repartition_fines_tranches_age_par_sport(
+            data_complet, annee=annees_widget.value
+        )
 
     _run_widget(update, [annees_widget])
+
+
+# graphiques sexe
+
+
+def plot_licences_par_sexe(
+    df_lic: pd.DataFrame, sport_code: str = "all", sport_col: str = "code_sport"
+):
+    """
+    Construit une figure Plotly des licences annuelles par sexe.
+
+    Paramètres
+    ----------
+    df_lic : pd.DataFrame
+        Doit contenir au minimum : ['annee', 'licences_annuelles', 'sexe', 'sport', sport_col].
+    sport_code : str, optionnel
+        "all" pour tous sports, sinon un code sport (ex "HAN").
+    sport_col : str, optionnel
+        Nom de la colonne contenant le code sport.
+
+    Retour
+    ------
+    plotly.graph_objects.Figure
+        Courbes (ou points) par sexe, en fonction de l'année.
+    """
+    df = df_lic.copy()
+    if sport_code != "all":
+        df = df[df[sport_col] == sport_code]
+
+    # Agrégation
+    agg = (
+        df.groupby(["annee", "sexe"], as_index=False)["licences_annuelles"]
+        .sum()
+        .sort_values(["annee", "sexe"])
+    )
+
+    titre = "Tous sports" if sport_code == "all" else sport_code
+    fig = px.line(
+        agg,
+        x="annee",
+        y="licences_annuelles",
+        color="sexe",
+        markers=True,
+        title=f"Licences annuelles par sexe – {titre}",
+        labels={
+            "annee": "Année",
+            "licences_annuelles": "Licences annuelles",
+            "sexe": "Sexe",
+        },
+    )
+    fig.update_xaxes(dtick=1)
+    return fig
+
+
+def widgets_licences_par_sexe(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
+    """
+    Widget : sélection du sport → affiche la figure 'licences par sexe'.
+
+    Note
+    ----
+    Aucun Output local ici : l'affichage est géré par _run_widget.
+    """
+    sports = ["all"] + sorted(df_lic["sport"].dropna().unique())
+    sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
+
+    def update():
+        selected = sport_widget.value
+        if selected == "all":
+            return plot_licences_par_sexe(df_lic, sport_code="all", sport_col=sport_col)
+
+        codes = df_lic.loc[df_lic["sport"] == selected, sport_col].dropna().unique()
+        if len(codes) == 0:
+            print(f"Aucun code sport trouvé pour : {selected}")
+            return None
+
+        code = codes[0] if len(codes) == 1 else list(codes)
+        return plot_licences_par_sexe(df_lic, sport_code=code, sport_col=sport_col)
+
+    _run_widget(update, [sport_widget])
+
+
+def plot_part_jeunes(
+    df_lic: pd.DataFrame,
+    age_max: int = 15,
+    sport_code: str = "all",
+    sport_col: str = "code_sport",
+):
+    """
+    Construit une figure Plotly de la part de jeunes (< age_max) parmi les licenciés, par année.
+
+    Paramètres
+    ----------
+    df_lic : pd.DataFrame
+        Colonnes attendues : ['annee', 'licences_annuelles', 'age', 'sport', sport_col].
+    age_max : int, optionnel
+        Seuil strict : jeunes si age < age_max.
+    sport_code : str, optionnel
+        "all" pour tous sports, sinon un code sport.
+    sport_col : str, optionnel
+        Nom de la colonne contenant le code sport.
+
+    Retour
+    ------
+    plotly.graph_objects.Figure
+        Courbe de la part des jeunes (%) par année.
+    """
+    df = df_lic.copy()
+    df["age"] = pd.to_numeric(df["age"], errors="coerce")
+
+    if sport_code != "all":
+        df = df[df[sport_col] == sport_code]
+
+    total = (
+        df.groupby("annee", as_index=False)["licences_annuelles"]
+        .sum()
+        .rename(columns={"licences_annuelles": "licences_total"})
+    )
+    jeunes = (
+        df[df["age"] < age_max]
+        .groupby("annee", as_index=False)["licences_annuelles"]
+        .sum()
+        .rename(columns={"licences_annuelles": "licences_jeunes"})
+    )
+
+    merged = total.merge(jeunes, on="annee", how="left").fillna({"licences_jeunes": 0})
+    merged["part_jeunes"] = np.where(
+        merged["licences_total"] > 0,
+        merged["licences_jeunes"] / merged["licences_total"],
+        np.nan,
+    )
+
+    titre = "Tous sports" if sport_code == "all" else sport_code
+    fig = px.line(
+        merged.sort_values("annee"),
+        x="annee",
+        y="part_jeunes",
+        markers=True,
+        title=f"Part des jeunes (< {age_max} ans) – {titre}",
+        labels={"annee": "Année", "part_jeunes": "Part des jeunes"},
+    )
+    fig.update_yaxes(tickformat=".0%")
+    fig.update_xaxes(dtick=1)
+    return fig
+
+
+def widgets_part_jeunes(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
+    """
+    Widget : choix du sport + slider age_max → affiche la part des jeunes.
+    """
+    sports = ["all"] + sorted(df_lic["sport"].dropna().unique())
+    sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
+    age_widget = widgets.IntSlider(
+        value=15, min=5, max=30, step=1, description="Âge max :"
+    )
+
+    def update():
+        selected = sport_widget.value
+        age_max = age_widget.value
+
+        if selected == "all":
+            return plot_part_jeunes(
+                df_lic, age_max=age_max, sport_code="all", sport_col=sport_col
+            )
+
+        codes = df_lic.loc[df_lic["sport"] == selected, sport_col].dropna().unique()
+        if len(codes) == 0:
+            print(f"Aucun code sport trouvé pour : {selected}")
+            return None
+
+        code = codes[0] if len(codes) == 1 else list(codes)
+        return plot_part_jeunes(
+            df_lic, age_max=age_max, sport_code=code, sport_col=sport_col
+        )
+
+    _run_widget(update, [sport_widget, age_widget])
+
+
+def plot_part_femmes(
+    df_lic: pd.DataFrame, sport_code: str = "all", sport_col: str = "code_sport"
+):
+    """
+    Construit une figure Plotly de la part des femmes parmi les licenciés, par année.
+
+    Paramètres
+    ----------
+    df_lic : pd.DataFrame
+        Colonnes attendues : ['annee', 'licences_annuelles', 'sexe', 'sport', sport_col].
+    sport_code : str, optionnel
+        "all" pour tous sports, sinon un code sport.
+    sport_col : str, optionnel
+        Nom de la colonne contenant le code sport.
+
+    Retour
+    ------
+    plotly.graph_objects.Figure
+        Courbe de la part des femmes (%) par année.
+    """
+    df = df_lic.copy()
+    if sport_code != "all":
+        df = df[df[sport_col] == sport_code]
+
+    # Heuristique robuste (selon codage de votre variable sexe)
+    sexe = df["sexe"].astype(str).str.lower()
+    is_femme = sexe.str.startswith("f") | sexe.str.contains("fem")
+
+    total = (
+        df.groupby("annee", as_index=False)["licences_annuelles"]
+        .sum()
+        .rename(columns={"licences_annuelles": "licences_total"})
+    )
+    femmes = (
+        df[is_femme]
+        .groupby("annee", as_index=False)["licences_annuelles"]
+        .sum()
+        .rename(columns={"licences_annuelles": "licences_femmes"})
+    )
+
+    merged = total.merge(femmes, on="annee", how="left").fillna({"licences_femmes": 0})
+    merged["part_femmes"] = np.where(
+        merged["licences_total"] > 0,
+        merged["licences_femmes"] / merged["licences_total"],
+        np.nan,
+    )
+
+    titre = "Tous sports" if sport_code == "all" else sport_code
+    fig = px.line(
+        merged.sort_values("annee"),
+        x="annee",
+        y="part_femmes",
+        markers=True,
+        title=f"Part des femmes – {titre}",
+        labels={"annee": "Année", "part_femmes": "Part des femmes"},
+    )
+    fig.update_yaxes(tickformat=".0%")
+    fig.update_xaxes(dtick=1)
+    return fig
+
+
+def widgets_part_femmes(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
+    """
+    Widget : choix du sport → affiche la part des femmes.
+    """
+    sports = ["all"] + sorted(df_lic["sport"].dropna().unique())
+    sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
+
+    def update():
+        selected = sport_widget.value
+        if selected == "all":
+            return plot_part_femmes(df_lic, sport_code="all", sport_col=sport_col)
+
+        codes = df_lic.loc[df_lic["sport"] == selected, sport_col].dropna().unique()
+        if len(codes) == 0:
+            print(f"Aucun code sport trouvé pour : {selected}")
+            return None
+
+        code = codes[0] if len(codes) == 1 else list(codes)
+        return plot_part_femmes(df_lic, sport_code=code, sport_col=sport_col)
+
+    _run_widget(update, [sport_widget])
+
+
+def plot_heatmap_nbr_licencies(
+    df_lic: pd.DataFrame, sport_code: str = "all", sport_col: str = "code_sport"
+):
+    """
+    Construit une heatmap Plotly du nombre de licences par tranche d'âge et par année.
+
+    Paramètres
+    ----------
+    df_lic : pd.DataFrame
+        Colonnes attendues : ['annee', 'tranche_age', 'licences_annuelles', 'sport', sport_col].
+    sport_code : str, optionnel
+        "all" pour tous sports, sinon un code sport.
+    sport_col : str, optionnel
+        Nom de la colonne contenant le code sport.
+
+    Retour
+    ------
+    plotly.graph_objects.Figure
+        Heatmap interactive (années en x, tranches d'âge en y).
+    """
+    df = df_lic.copy()
+    if sport_code != "all":
+        df = df[df[sport_col] == sport_code]
+
+    # Pivot : lignes = tranche_age, colonnes = annee
+    pivot = df.pivot_table(
+        index="tranche_age",
+        columns="annee",
+        values="licences_annuelles",
+        aggfunc="sum",
+        fill_value=0,
+    ).sort_index()
+
+    # Tri plus “naturel” des tranches (si format du type "10-14", "15-19"...)
+    def _lower_bound(x):
+        m = re.search(r"\d+", str(x))
+        return int(m.group()) if m else 10**9
+
+    pivot = pivot.loc[sorted(pivot.index, key=_lower_bound), :].sort_index(axis=1)
+
+    titre = "Tous sports" if sport_code == "all" else sport_code
+    fig = px.imshow(
+        pivot,
+        aspect="auto",
+        title=f"Heatmap licences (tranche d'âge × année) – {titre}",
+        labels={"x": "Année", "y": "Tranche d'âge", "color": "Licences"},
+    )
+    return fig
+
+
+def widgets_heatmap_nbr_licencies(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
+    """
+    Widget : choix du sport → affiche la heatmap licences (tranche_age × annee).
+    """
+    sports = ["all"] + sorted(df_lic["sport"].dropna().unique())
+    sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
+
+    def update():
+        selected = sport_widget.value
+        if selected == "all":
+            return plot_heatmap_nbr_licencies(
+                df_lic, sport_code="all", sport_col=sport_col
+            )
+
+        codes = df_lic.loc[df_lic["sport"] == selected, sport_col].dropna().unique()
+        if len(codes) == 0:
+            print(f"Aucun code sport trouvé pour : {selected}")
+            return None
+
+        code = codes[0] if len(codes) == 1 else list(codes)
+        return plot_heatmap_nbr_licencies(df_lic, sport_code=code, sport_col=sport_col)
+
+    _run_widget(update, [sport_widget])
