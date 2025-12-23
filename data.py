@@ -649,3 +649,42 @@ def gel_population(df, nom_fichier="population_dept.csv"):
     """
     output_path = os.path.join(DATA_DIR, nom_fichier)
     df.to_csv(output_path, index=False)
+
+def charger_donnees(
+    data_complet_path="data/data_complet.parquet",
+    geojson_path="departements.geojson",
+    population_path="data/data_population/population_dept.csv",
+):
+    """
+    Charge les données nécessaires pour les cartes et graphiques.
+
+    Paramètres
+    ----------
+    data_complet_path : str, optionnel
+        Chemin vers le fichier parquet contenant la base complète.
+    geojson_path : str, optionnel
+        Chemin vers le fichier GeoJSON des départements.
+    population_path : str, optionnel
+        Chemin vers le CSV de population par département.
+
+    Retour
+    ------
+    data_complet : pandas.DataFrame
+        Base complète des licenciés (nettoyée sur `code_dep`).
+    gdf_dep : geopandas.GeoDataFrame
+        Géométrie des départements (doit contenir une clé `code`).
+    data_pop : pandas.DataFrame
+        Population par département et par année.
+    """
+    # Base complète : on ne conserve que les lignes avec code_dep
+    data_complet = pd.read_parquet(data_complet_path)
+    data_complet = data_complet.dropna(subset=["code_dep"]).copy()
+    data_complet["code_dep"] = data_complet["code_dep"].astype(str)
+
+    # Données géographiques (départements)
+    gdf_dep = gpd.read_file(geojson_path)
+
+    # Table population (référence pour les proportions)
+    data_pop = pd.read_csv(population_path)
+
+    return data_complet, gdf_dep, data_pop

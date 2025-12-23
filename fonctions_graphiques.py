@@ -1701,7 +1701,6 @@ def plot_part_femmes(
     if sport_code != "all":
         df = df[df[sport_col] == sport_code]
 
-    # Heuristique robuste (selon codage de votre variable sexe)
     sexe = df["sexe"].astype(str).str.lower()
     is_femme = sexe.str.startswith("f") | sexe.str.contains("fem")
 
@@ -1794,7 +1793,6 @@ def plot_heatmap_nbr_licencies(
         fill_value=0,
     ).sort_index()
 
-    # Tri plus “naturel” des tranches (si format du type "10-14", "15-19"...)
     def _lower_bound(x):
         m = re.search(r"\d+", str(x))
         return int(m.group()) if m else 10**9
@@ -1813,7 +1811,7 @@ def plot_heatmap_nbr_licencies(
 
 def widgets_heatmap_nbr_licencies(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
     """
-    Widget : choix du sport → affiche la heatmap licences (tranche_age × annee).
+    Widget : choix du sport → affiche la heatmap licences (tranche_age x annee).
     """
     sports = ["all"] + sorted(df_lic["sport"].dropna().unique())
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
