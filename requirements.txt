@@ -1,7 +1,12 @@
-os
 pandas
 numpy
 pyarrow
 requests
-unicodedata
-json
+beautifulsoup4
+lxml
+geopandas
+matplotlib
+plotly
+ipywidgets
+IPython
+pathlib

@@ -8,6 +8,8 @@ le notebook principal (main.ipynb).
 import os
 import unicodedata
 import json
+from pathlib import Path
+import hashlib
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -16,32 +18,52 @@ import pyarrow.parquet as pq
 import pyarrow as pa
 
 
+CACHE_DIR = Path("data/raw_cache")
+
+def _cache_path_for(url: str, suffix: str) -> Path:
+    """Crée un nom de fichier stable à partir d'une URL."""
+    h = hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
+    return CACHE_DIR / f"{h}{suffix}"
+
+def get_url_bytes(url: str, *, suffix: str, force_download: bool = False,
+                  headers: dict | None = None, timeout: int = 30, verify: bool = True) -> bytes:
+    """
+    Récupère le contenu d'une URL avec cache disque.
+    - Si le fichier cache existe et force_download=False : relit le fichier
+    - Sinon : télécharge et écrit le fichier cache
+    """
+    cache_path = _cache_path_for(url, suffix)
+    if cache_path.exists() and not force_download:
+        return cache_path.read_bytes()
+
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    resp = requests.get(url, headers=headers, timeout=timeout, verify=verify)
+    resp.raise_for_status()
+    cache_path.write_bytes(resp.content)
+    return resp.content
+
+
 # --- Paramètres globaux ---
 URL_JO = "https://fr.wikipedia.org/wiki/France_aux_Jeux_olympiques"
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = BASE_DIR
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
 
 
 # --- Chargement de la page Wikipedia ---
-def charger_page_wiki(url=URL_JO):
+def soup_from_url(url, force_download=False):
     """
-    Télécharge et analyse une page Wikipedia.
-
-    Paramètres
-    ----------
-    url : str, optionnel
-        URL de la page à scraper.
-
-    Retour
-    ------
-    soup : BeautifulSoup
-        Objet BeautifulSoup contenant le HTML parsé.
+    Récupère une page HTML et renvoie un BeautifulSoup (avec cache).
     """
-    response = requests.get(
-        url, headers={"User-Agent": "Python data science project"}, timeout=10
+    content = get_url_bytes(
+        url,
+        suffix=".html",
+        force_download=force_download,
+        headers={"User-Agent": "Python data science project"},
+        timeout=10,
+        verify=True,
     )
-    response.raise_for_status()
-    return BeautifulSoup(response.content, "lxml")
+    return BeautifulSoup(content, "lxml")
+
 
 
 # --- Scraping des tableaux de médailles ---
@@ -103,9 +125,8 @@ def gel_tableau_medailles(type_medaille, id_html):
     id_html : str
         Identifiant HTML du tableau à scraper.
     """
-    soup = charger_page_wiki()
+    soup = soup_from_url(URL_JO)
     data = tableau_scraper(soup, id_html)
-
     output_path = os.path.join(DATA_DIR, f"data_{type_medaille}_jo.csv")
     data.to_csv(output_path, index=False)
 
