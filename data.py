@@ -256,11 +256,12 @@ def reorganiser_colonnes(liste_fichiers):
     tables : list[pyarrow.Table].
         Liste des tables avec l'ordre des colonnes harmonisé.
     """
-    ref_cols = pq.read_table(liste_fichiers[0]).column_names
+    input_path = DATA_DIR / "data_brut"
+    ref_cols = pq.read_table(input_path / liste_fichiers[0]).column_names
     tables = []
 
     for fichier in liste_fichiers:
-        table = pq.read_table(DATA_DIR / "data_brut"/ fichier)
+        table = pq.read_table(input_path / fichier)
         table = table.select(ref_cols)
         tables.append(table)
 
