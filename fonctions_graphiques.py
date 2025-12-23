@@ -214,7 +214,7 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     fig.update_yaxes(title_text="Nombre de licenciés", secondary_y=False)
     fig.update_yaxes(title_text="Nombre de médailles", secondary_y=True)
 
-    fig.show()
+    return fig
 
 
 def widget_graphique_licences_et_medailles(data_complet: pd.DataFrame):
@@ -223,7 +223,8 @@ def widget_graphique_licences_et_medailles(data_complet: pd.DataFrame):
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
 
     def update():
-        graphique_licences_et_medailles(data_complet, sport=sport_widget.value)
+        fig = graphique_licences_et_medailles(data_complet, sport=sport_widget.value)
+        display(fig)
 
     _run_widget(update, [sport_widget])
 
