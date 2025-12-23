@@ -6,6 +6,7 @@ principal (main.ipynb).
 """
 
 import pandas as pd
+import numpy as np
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -15,6 +16,7 @@ import ipywidgets as widgets
 from IPython.display import display, clear_output
 
 # II. Chargement des données
+
 
 def charger_donnees(
     data_complet_path="data/data_complet.parquet",
@@ -58,6 +60,7 @@ def charger_donnees(
 
 # II.A. Medailles et licenciés
 
+
 def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     """
     - x : années
@@ -98,7 +101,9 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     # Barres médailles (axe droit), empilées
     fig.add_trace(
         go.Bar(
-            x=years, y=med_or, name="Or",
+            x=years,
+            y=med_or,
+            name="Or",
             marker_color="#F2C300",  # jaune
             hovertemplate="Année: %{x}<br>Or: %{y}<extra></extra>",
         ),
@@ -106,7 +111,9 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     )
     fig.add_trace(
         go.Bar(
-            x=years, y=med_arg, name="Argent",
+            x=years,
+            y=med_arg,
+            name="Argent",
             marker_color="#B0B0B0",  # gris
             hovertemplate="Année: %{x}<br>Argent: %{y}<extra></extra>",
         ),
@@ -114,7 +121,9 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     )
     fig.add_trace(
         go.Bar(
-            x=years, y=med_bro, name="Bronze",
+            x=years,
+            y=med_bro,
+            name="Bronze",
             marker_color="#8C6239",  # brun
             hovertemplate="Année: %{x}<br>Bronze: %{y}<extra></extra>",
         ),
@@ -190,9 +199,7 @@ def classement_sports_medailles(data_complet, annee="all"):
         annees = annees_disponibles
     else:
         if annee not in annees_disponibles:
-            raise ValueError(
-                f"annee doit être dans {annees_disponibles} ou 'all'"
-            )
+            raise ValueError(f"annee doit être dans {annees_disponibles} ou 'all'")
         annees = [annee]
 
     # Colonnes de médailles à utiliser
@@ -220,15 +227,11 @@ def classement_sports_medailles(data_complet, annee="all"):
         df["total_bronze"] += df[f"{a}_bronze"]
 
     # Total simple
-    df["total_medailles"] = (
-        df["total_or"] + df["total_argent"] + df["total_bronze"]
-    )
+    df["total_medailles"] = df["total_or"] + df["total_argent"] + df["total_bronze"]
 
     # Score pondéré
     df["score_pondere"] = (
-        3 * df["total_or"]
-        + 2 * df["total_argent"]
-        + 1 * df["total_bronze"]
+        3 * df["total_or"] + 2 * df["total_argent"] + 1 * df["total_bronze"]
     )
 
     # Exclusion des sports sans médailles et classement
@@ -240,7 +243,14 @@ def classement_sports_medailles(data_complet, annee="all"):
 
     # Colonnes finales
     df_classement = df_classement[
-        ["sport", "total_medailles", "total_or", "total_argent", "total_bronze", "score_pondere"]
+        [
+            "sport",
+            "total_medailles",
+            "total_or",
+            "total_argent",
+            "total_bronze",
+            "score_pondere",
+        ]
     ]
 
     return df_classement
@@ -280,11 +290,9 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
         - taux_croissance (en %)
     """
     # Agrégation préalable : licenciés par sport et par année
-    lic_sport_annee = (
-        data_complet
-        .groupby(["sport", "annee"], as_index=False)["licences_annuelles"]
-        .sum()
-    )
+    lic_sport_annee = data_complet.groupby(["sport", "annee"], as_index=False)[
+        "licences_annuelles"
+    ].sum()
 
     # Année de référence pour les licenciés (cas particulier JO 2020)
     annee_lic = 2021 if annee_jo == 2020 else annee_jo
@@ -295,9 +303,7 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
     # Identification des sports ayant remporté au moins une médaille l'année JO
     cols_jo = [f"{annee_jo}_or", f"{annee_jo}_argent", f"{annee_jo}_bronze"]
     sports_medailes = (
-        data_complet[
-            data_complet[cols_jo].fillna(0).sum(axis=1) > 0
-        ]["sport"]
+        data_complet[data_complet[cols_jo].fillna(0).sum(axis=1) > 0]["sport"]
         .dropna()
         .unique()
     )
@@ -307,27 +313,30 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
         df_s = lic_sport_annee[lic_sport_annee["sport"] == sport]
 
         # On vérifie la présence des deux années nécessaires
-        if (
-            (df_s["annee"] == annee_lic).any()
-            and (df_s["annee"] == annee_lic_plus_delta).any()
-        ):
+        if (df_s["annee"] == annee_lic).any() and (
+            df_s["annee"] == annee_lic_plus_delta
+        ).any():
             L_t = float(
                 df_s.loc[df_s["annee"] == annee_lic, "licences_annuelles"].iloc[0]
             )
             L_t_delta = float(
-                df_s.loc[df_s["annee"] == annee_lic_plus_delta, "licences_annuelles"].iloc[0]
+                df_s.loc[
+                    df_s["annee"] == annee_lic_plus_delta, "licences_annuelles"
+                ].iloc[0]
             )
 
             # Sécurité : éviter une division par zéro
             if L_t > 0:
-                rows.append({
-                    "sport": sport,
-                    "annee_jo": annee_jo,
-                    "annee_licences_t": annee_lic,
-                    "licences_t": L_t,
-                    "licences_t_plus_2": L_t_delta,
-                    "taux_croissance": 100 * (L_t_delta - L_t) / L_t
-                })
+                rows.append(
+                    {
+                        "sport": sport,
+                        "annee_jo": annee_jo,
+                        "annee_licences_t": annee_lic,
+                        "licences_t": L_t,
+                        "licences_t_plus_2": L_t_delta,
+                        "taux_croissance": 100 * (L_t_delta - L_t) / L_t,
+                    }
+                )
 
     # Construction du DataFrame final
     df_croissance = pd.DataFrame(
@@ -344,14 +353,150 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
 
     # Classement par taux de croissance décroissant
     if not df_croissance.empty:
-        df_croissance = (
-            df_croissance
-            .sort_values("taux_croissance", ascending=False)
-            .reset_index(drop=True)
-        )
+        df_croissance = df_croissance.sort_values(
+            "taux_croissance", ascending=False
+        ).reset_index(drop=True)
 
     return df_croissance
 
+
+def licences_par_annee(df_lic, sport_code="all", sport_col="code_sport"):
+    """
+    Affiche un graphique interactif des licences annuelles.
+
+    Paramètres
+    ----------
+    df_lic : pd.DataFrame
+        DataFrame contenant au moins les colonnes ['annee', 'licences_annuelles', sport_col].
+    sport_code : str ou None, optionnel
+        Filtre pour un code de sport spécifique. Si None, affiche tous les sports.
+    sport_col : str
+        Nom de la colonne contenant le code sport (par défaut 'code_sport').
+    output_widget : ipywidgets.Output ou None
+        Si fourni, le graphique sera affiché dans ce widget pour permettre une mise à jour interactive.
+
+    Output
+    ------
+    Graphique interactif Plotly des licences annuelles.
+    """
+
+    df = df_lic.copy()
+
+    # Filtrage par sport si demandé
+    if sport_code == "all":
+        df = df.copy()
+        titre_sport = "tous les sports"
+    else:
+        df = df[df[sport_col] == sport_code]
+        noms_sports = df["sport"].dropna().unique()
+        if len(noms_sports) == 1:
+            titre_sport = noms_sports[0]
+        else:
+            titre_sport = ", ".join(noms_sports)
+
+    # Agrégation des licences par année
+    data = (
+        df.groupby("annee")["licences_annuelles"]
+        .sum()
+        .reset_index()
+        .sort_values("annee")
+    )
+
+    # Calcul de la variation annuelle et du taux d'évolution
+    if len(data) >= 2:
+        data["variation"] = data["licences_annuelles"].diff()
+        data["taux_evolution_%"] = data["licences_annuelles"].pct_change() * 100
+    else:
+        data["variation"] = np.nan
+        data["taux_evolution_%"] = np.nan
+
+    # Tracé
+    fig = px.line(
+        data,
+        x="annee",
+        y="licences_annuelles",
+        title=f"Licences annuelles - {titre_sport}",
+        markers=True,
+        labels={"annee": "Année", "licences_annuelles": "Licences annuelles"},
+    )
+
+    fig.update_layout(xaxis=dict(dtick=1))
+    fig.show()
+
+
+def widget_licences_par_sport(
+    df, sport_name_col="sport", sport_code_col="code_sport"
+):
+    """
+    Crée un widget interactif (Dropdown) permettant de sélectionner un sport
+    et d'afficher le graphique correspondant via la fonction `plot_licences_par_annee`.
+
+    Paramètres
+    ----------
+    df : pandas.DataFrame
+        DataFrame contenant au minimum les colonnes :
+        - sport_name_col (par défaut 'sport')
+        - sport_code_col (par défaut 'code_sport')
+    sport_name_col : str, optionnel
+        Nom de la colonne contenant le libellé du sport (par défaut 'sport').
+    sport_code_col : str, optionnel
+        Nom de la colonne contenant le code du sport (par défaut 'code_sport').
+
+    Retour
+    ------
+    tuple (sports_widget, out)
+        - sports_widget : widget Dropdown (utile si tu veux le manipuler ensuite)
+        - out : widget Output (utile si tu veux contrôler l'affichage)
+    """
+    # Préparation des options : "all" + liste des sports
+    sports_names = sorted(df[sport_name_col].dropna().unique())
+    options = ["all"] + list(sports_names)
+
+    # Création des widgets
+    sports_widget = widgets.Dropdown(
+        options=options,
+        description="Sports :",
+        value="all",
+    )
+    out = widgets.Output()
+
+    def update_graph(change=None):  # pylint: disable=W0613
+        """
+        Met à jour le graphique lorsque l'utilisateur change le sport sélectionné.
+        """
+        with out:
+            clear_output(wait=True)
+
+            selected_sport = sports_widget.value
+
+            # Cas 1 : tous sports
+            if selected_sport == "all":
+                licences_par_annee(df, sport_code="all", sport_col=sport_code_col)
+                return
+
+            # Cas 2 : un sport spécifique -> conversion nom -> code(s)
+            codes = (
+                df.loc[df[sport_name_col] == selected_sport, sport_code_col]
+                .dropna()
+                .unique()
+            )
+
+            if len(codes) == 0:
+                print(f"Aucun code sport trouvé pour : {selected_sport}")
+                return
+
+            sport_code = codes[0] if len(codes) == 1 else list(codes)
+
+            licences_par_annee(df, sport_code=sport_code, sport_col=sport_code_col)
+
+    # Liaison du widget à la fonction
+    sports_widget.observe(update_graph, names="value")
+
+    # Affichage initial
+    display(sports_widget, out)
+    update_graph()
+
+    return sports_widget, out
 
 
 # Evolution des licenciés selon le nombre de medailles
@@ -364,15 +509,22 @@ def _table_licences_par_sport_annee(df: pd.DataFrame, sport: str) -> pd.DataFram
     )
     return lic
 
+
 def _medailles_par_sport(df: pd.DataFrame, sport: str) -> dict:
     """
     Retourne un dict {2016: {'or':x,'argent':y,'bronze':z}, 2020:..., 2024:...}
     """
     cols_needed = [
         "sport",
-        "2016_or","2016_argent","2016_bronze",
-        "2020_or","2020_argent","2020_bronze",
-        "2024_or","2024_argent","2024_bronze",
+        "2016_or",
+        "2016_argent",
+        "2016_bronze",
+        "2020_or",
+        "2020_argent",
+        "2020_bronze",
+        "2024_or",
+        "2024_argent",
+        "2024_bronze",
     ]
     cols_needed = [c for c in cols_needed if c in df.columns]
     med = df[cols_needed].drop_duplicates(subset=["sport"]).copy()
@@ -380,18 +532,33 @@ def _medailles_par_sport(df: pd.DataFrame, sport: str) -> dict:
 
     row = med[med["sport"] == sport]
     if row.empty:
-        return {2016: {"or": 0, "argent": 0, "bronze": 0},
-                2021: {"or": 0, "argent": 0, "bronze": 0},
-                2024: {"or": 0, "argent": 0, "bronze": 0}}
+        return {
+            2016: {"or": 0, "argent": 0, "bronze": 0},
+            2021: {"or": 0, "argent": 0, "bronze": 0},
+            2024: {"or": 0, "argent": 0, "bronze": 0},
+        }
 
     row = row.iloc[0]
+
     def get(col):
         return 0 if (col not in med.columns or pd.isna(row[col])) else int(row[col])
 
     return {
-        2016: {"or": get("2016_or"), "argent": get("2016_argent"), "bronze": get("2016_bronze")},
-        2021: {"or": get("2020_or"), "argent": get("2020_argent"), "bronze": get("2020_bronze")},
-        2024: {"or": get("2024_or"), "argent": get("2024_argent"), "bronze": get("2024_bronze")},
+        2016: {
+            "or": get("2016_or"),
+            "argent": get("2016_argent"),
+            "bronze": get("2016_bronze"),
+        },
+        2021: {
+            "or": get("2020_or"),
+            "argent": get("2020_argent"),
+            "bronze": get("2020_bronze"),
+        },
+        2024: {
+            "or": get("2024_or"),
+            "argent": get("2024_argent"),
+            "bronze": get("2024_bronze"),
+        },
     }
 
 
@@ -420,7 +587,7 @@ def aggregation_par_an(df, year):
     return df_year.groupby("code_dep")["licences_annuelles"].sum().reset_index()
 
 
-def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all", title=None):
+def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     """
     Affiche une carte de la proportion de licenciés par département pour une année et
     un sport donnés. La proportion est exprimée en pourcentage.
@@ -442,8 +609,6 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all", title=N
         Année à afficher.
     sport : str, optionnel
         Sport à filtrer. Utiliser "all" pour tous sports.
-    title : str, optionnel
-        Titre personnalisé de la carte.
 
     Retour
     ------
@@ -508,7 +673,7 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all", title=N
         titre_sport = f"({sport})"
 
     ax.set_title(
-        (title if title else f"Proportion de licenciés (%) {titre_sport} – {annee}"),
+        f"Proportion de licenciés (%) {titre_sport} – {annee}",
         fontsize=14,
     )
 
@@ -519,9 +684,7 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all", title=N
     plt.show()
 
 
-def carte_evolution_licencies(
-    data_complet, gdf_dep, annee1, annee2, sport="all", title=None
-):
+def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"):
     """
     Affiche une carte du taux de croissance des licenciés par département
     entre deux années pour un sport donné.
@@ -542,8 +705,6 @@ def carte_evolution_licencies(
         Année de comparaison.
     sport : str, optionnel
         Sport à filtrer. Utiliser "all" pour tous sports.
-    title : str, optionnel
-        Titre personnalisé de la carte.
 
     Retour
     ------
@@ -608,7 +769,7 @@ def carte_evolution_licencies(
         titre_sport = f"({sport})"
 
     ax.set_title(
-        (title if title else f"Taux de croissance {titre_sport} – {annee1}-{annee2}"),
+        f"Taux de croissance {titre_sport} – {annee1}-{annee2}",
         fontsize=16,
     )
 
