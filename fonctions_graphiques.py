@@ -46,14 +46,16 @@ def _run_widget(update_fn, controls):
     def _wrapped_update(change=None):  # pylint: disable=unused-argument
         with out:
             clear_output(wait=True)
-            update_fn()
+            res = update_fn()
+            if res is not None:
+                display(res)
+
 
     for c in controls:
         c.observe(_wrapped_update, names="value")
 
     display(*controls, out)
     _wrapped_update()
-    return None
 
 
 
@@ -131,7 +133,7 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     years = lic["annee"].tolist()
 
     jo_col_years = [2016, 2020, 2024]
-    jo_display_year = {2016: 2016, 2020: 2021, 2024: 2024} 
+    jo_display_year = {2016: 2016, 2020: 2021, 2024: 2024}
     medal_types = ("or", "argent", "bronze")
     medal_colors = {"or": "#F2C300", "argent": "#B0B0B0", "bronze": "#8C6239"}
 
@@ -489,7 +491,7 @@ def licences_par_annee(df_lic, sport_code="all", sport_col="code_sport"):
     )
 
     fig.update_layout(xaxis=dict(dtick=1))
-    fig.show()
+    return fig
 
 
 def widget_licences_par_sport(
@@ -1016,7 +1018,7 @@ def evolution_licencies_age(df, age="all"):
     fig.update_layout(width=1100, height=600)
 
     # Affichage
-    fig.show()
+    return fig
 
 
 def evolution_licences_tranches_fines_age(df, tranche="all"):
@@ -1085,7 +1087,7 @@ def evolution_licences_tranches_fines_age(df, tranche="all"):
     fig.update_layout(width=1200, height=650)
 
     # Affichage
-    fig.show()
+    return fig
 
 
 def evolution_licences_tranches_grandes_age(df, tranche="all"):
@@ -1154,7 +1156,7 @@ def evolution_licences_tranches_grandes_age(df, tranche="all"):
     fig.update_layout(width=1200, height=650)
 
     # Affichage
-    fig.show()
+    return fig
 
 
 def repartition_grandes_tranches_age_par_sport(df, annee="all"):
@@ -1228,7 +1230,7 @@ def repartition_grandes_tranches_age_par_sport(df, annee="all"):
     )
     fig.update_xaxes(ticksuffix="%")
     fig.update_layout(width=1000, height=800, xaxis=dict(range=[0, 100]))
-    fig.show()
+    return fig
 
 
 def repartition_fines_tranches_age_par_sport(df, annee="all"):
@@ -1316,7 +1318,7 @@ def repartition_fines_tranches_age_par_sport(df, annee="all"):
     fig.update_layout(width=1000, height=800, xaxis=dict(range=[1, 100]))
 
     # Affichage
-    fig.show()
+    return fig
 
 
 # Widgets pour les graphiques par âge
