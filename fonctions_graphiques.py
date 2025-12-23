@@ -52,7 +52,7 @@ def _run_widget(update_fn, controls):
 
     display(*controls, out)
     _wrapped_update()
-    return out
+    return None
 
 
 
