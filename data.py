@@ -260,7 +260,7 @@ def reorganiser_colonnes(liste_fichiers):
     tables = []
 
     for fichier in liste_fichiers:
-        table = pq.read_table(fichier)
+        table = pq.read_table(DATA_DIR / "data_brut"/ fichier)
         table = table.select(ref_cols)
         tables.append(table)
 
