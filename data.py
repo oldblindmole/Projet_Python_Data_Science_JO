@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 import pyarrow.parquet as pq
 import pyarrow as pa
+import geopandas as gpd
 
 
 CACHE_DIR = Path("data/raw_cache")
