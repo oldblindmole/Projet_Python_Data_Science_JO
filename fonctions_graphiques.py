@@ -217,15 +217,11 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
 
 
 def widget_graphique_licences_et_medailles(data_complet: pd.DataFrame):
-    """#TODO"""
     sports = ["all"] + sorted(data_complet["sport"].dropna().unique())
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
-    out = widgets.Output()
 
-    def update(change=None):  # pylint: disable=W0613
-        with out:
-            clear_output(wait=True)
-            graphique_licences_et_medailles(data_complet, sport=sport_widget.value)
+    def update():
+        graphique_licences_et_medailles(data_complet, sport=sport_widget.value)
 
     _run_widget(update, [sport_widget])
 
