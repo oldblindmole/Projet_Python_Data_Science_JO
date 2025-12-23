@@ -24,6 +24,7 @@ def _filtrer_sport(df: pd.DataFrame, sport: str):
     """Retourne df filtré sur un sport, ou df inchangé si sport == 'all'."""
     return df if sport == "all" else df[df["sport"] == sport]
 
+
 def _run_widget(update_fn, controls):
     """
     Affiche des contrôles + un Output, et relance update_fn() quand un contrôle change.
@@ -217,6 +218,7 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
 
 
 def widget_graphique_licences_et_medailles(data_complet: pd.DataFrame):
+    """TODO"""
     sports = ["all"] + sorted(data_complet["sport"].dropna().unique())
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
 
@@ -524,6 +526,7 @@ def widget_licences_par_sport(
         value="all",
     )
     out = widgets.Output()
+
 
     def update_graph(change=None):  # pylint: disable=W0613
         """
