@@ -18,9 +18,13 @@ import pyarrow.parquet as pq
 import pyarrow as pa
 import geopandas as gpd
 
-
+# --- Paramètres globaux ---
+URL_JO = "https://fr.wikipedia.org/wiki/France_aux_Jeux_olympiques"
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
 CACHE_DIR = Path("data/raw_cache")
 
+# --- Fonctions de gestion du cache ---
 def _cache_path_for(url: str, suffix: str) -> Path:
     """Crée un nom de fichier stable à partir d'une URL."""
     h = hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
@@ -44,10 +48,6 @@ def get_url_bytes(url: str, *, suffix: str, force_download: bool = False,
     return resp.content
 
 
-# --- Paramètres globaux ---
-URL_JO = "https://fr.wikipedia.org/wiki/France_aux_Jeux_olympiques"
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
 
 
 # --- Chargement de la page Wikipedia ---
@@ -128,7 +128,7 @@ def gel_tableau_medailles(type_medaille, id_html):
     """
     soup = soup_from_url(URL_JO)
     data = tableau_scraper(soup, id_html)
-    output_path = os.path.join(DATA_DIR, f"data_{type_medaille}_jo.csv")
+    output_path = DATA_DIR / "data_brut" / f"data_{type_medaille}_jo.csv"
     data.to_csv(output_path, index=False)
 
 
@@ -233,14 +233,13 @@ def gel_base_medailles_finale(filename="data_medailles_jo.csv"):
     data_bronze = pd.read_csv(os.path.join(DATA_DIR, "data_bronze_jo.csv"))
 
     data_medailles = fusionner_bases(data_or, data_argent, data_bronze)
-    output_path = os.path.join(DATA_DIR, filename)
+    output_path = DATA_DIR / "data_clean" / filename 
     data_medailles.to_csv(output_path, index=False)
 
     return data_medailles
 
 
 # --- Données de Licences ---
-
 
 def reorganiser_colonnes(liste_fichiers):
     """
@@ -249,7 +248,8 @@ def reorganiser_colonnes(liste_fichiers):
 
     Paramètres
     ----------
-    Aucun
+    liste_fichiers : list[str]
+        Liste des fichiers de licences. 
 
     Retour
     ------
@@ -265,7 +265,6 @@ def reorganiser_colonnes(liste_fichiers):
         tables.append(table)
 
     return tables
-
 
 def normalisation_unicode(table):
     """
@@ -349,7 +348,6 @@ def code_sport(df):
 
     return df
 
-
 def code_dep(df, var):
     """
     Crée un code département avec seulement leur numéro.
@@ -369,7 +367,6 @@ def code_dep(df, var):
     df["code_dep"] = df[var].str.extract(r"^(\d{2,3}|2A|2B)")
 
     return df
-
 
 def renommer_colonnes(df):
     """
@@ -416,7 +413,7 @@ def gel_licences(df, nom_fichier="data_licences.parquet"):
     nom_fichier : str (optionnel)
         Nom du fichier parquet à écrire.
     """
-    chemin_sortie = os.path.join(DATA_DIR, nom_fichier)
+    chemin_sortie = DATA_DIR / "data_clean" / nom_fichier
     table = pa.Table.from_pandas(df)
     pq.write_table(table, chemin_sortie)
 
@@ -652,20 +649,20 @@ def gel_population(df, nom_fichier="population_dept.csv"):
     df.to_csv(output_path, index=False)
 
 def charger_donnees(
-    data_complet_path="data/data_complet.parquet",
-    geojson_path="departements.geojson",
-    population_path="data/data_population/population_dept.csv",
+    data_complet_path= DATA_DIR / "data_clean" / "data_complet.parquet",
+    geojson_path= DATA_DIR / "data_clean" / "departements.geojson",
+    population_path= DATA_DIR / "data_clean" / "population_dept.csv",
 ):
     """
     Charge les données nécessaires pour les cartes et graphiques.
 
     Paramètres
     ----------
-    data_complet_path : str, optionnel
+    data_complet_path : Path, optionnel
         Chemin vers le fichier parquet contenant la base complète.
-    geojson_path : str, optionnel
+    geojson_path : Path, optionnel
         Chemin vers le fichier GeoJSON des départements.
-    population_path : str, optionnel
+    population_path : Path, optionnel
         Chemin vers le CSV de population par département.
 
     Retour
