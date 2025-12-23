@@ -678,6 +678,75 @@ def evolution_licences_tranches_fines_age(df, tranche="all"):
     fig.show()
 
 
+def evolution_licences_tranches_grandes_age(df, tranche="all"):
+    """
+    Trace l'évolution du nombre de licenciés par sport,
+    en filtrant par une grande tranche d'âge.
+
+    Paramètres
+    ----------
+    df : pandas.DataFrame
+        Base complète contenant `annee`, `sport`, `licences_annuelles`,
+        `code_sport`, `grande_tranche_age`.
+    tranche : str, optionnel
+        Grande tranche d'âge à filtrer (valeur de `grande_tranche_age`).
+        Utiliser "all" pour toutes les tranches.
+
+    Retour
+    ------
+    Graphique interactif Plotly représentant le nombre de licenciés par sport
+    et par année pour la tranche d'âge sélectionnée.
+    """
+    # Suppression des entrées "DIV" (divers) pour se concentrer sur les sports identifiés
+    df_clean = df[df["code_sport"] != "DIV"]
+
+    # Filtrage par tranche d'âge
+    if tranche != "all":
+        df_filtre = df_clean[df_clean["grande_tranche_age"] == tranche]
+        # Extraction du libellé de la tranche pour le titre
+        titre_age = df_filtre["grande_tranche_age"].str[4:].unique()[0]
+    else:
+        df_filtre = df_clean
+        titre_age = "de toutes les tranches d'âge"
+
+    df_filtre = df_filtre.sort_values(["annee", "sport"])
+
+    # Agrégation des licences par année et par sport
+    table = (
+        df_filtre.groupby(["annee", "sport"])["licences_annuelles"]
+        .sum()
+        .unstack()
+        .sort_index()
+    )
+
+    # Passage en long pour Plotly
+    table_long = table.reset_index().melt(
+        id_vars="annee", var_name="sport", value_name="licences_annuelles"
+    )
+
+    # Tracé
+    fig = px.line(
+        table_long,
+        x="annee",
+        y="licences_annuelles",
+        color="sport",
+        markers=True,
+        color_discrete_sequence=px.colors.qualitative.Alphabet,
+        labels={
+            "annee": "Année",
+            "licences_annuelles": "Nombre de licenciés",
+            "sport": "Sport",
+        },
+        title=f"Évolution du nombre de licenciés {titre_age} par sport",
+    )
+
+    # Mise en forme du graphique
+    fig.update_layout(width=1200, height=650)
+
+    # Affichage
+    fig.show()
+
+
 def repartition_grandes_tranches_age_par_sport(df, annee="all"):
     """
     Affiche la répartition (en %) des licenciés par sport et grande tranche d'âge.
@@ -927,6 +996,50 @@ def widgets_evolution_licences_tranches_fines_age(data_complet):
         with out:
             clear_output(wait=True)
             evolution_licences_tranches_fines_age(
+                data_complet, tranche=tranche_widget.value
+            )
+
+    # Liaison du widget à la fonction de mise à jour
+    tranche_widget.observe(update, names="value")
+
+    # Affichage initial
+    display(tranche_widget, out)
+    update()
+
+
+def widgets_evolution_licences_tranches_grande_age(data_complet):
+    """
+    Widget interactif pour afficher l'évolution des licenciés par grande tranche d'âge.
+
+    Paramètres
+    ----------
+    data_complet : pandas.DataFrame
+        Base complète contenant la colonne `grande_tranche_age`.
+
+    Retour
+    ------
+    None
+        Affiche un widget + le graphique Plotly associé.
+    """
+    # Récupération et tri des tranches d'âge uniques
+    tranches = sorted(data_complet["grande_tranche_age"].dropna().unique())
+
+    # Création du widget Dropdown
+    tranche_widget = widgets.Dropdown(
+        options=["all"] + tranches, description="Tranche :", value="all"
+    )
+
+    # Widget de sortie
+    out = widgets.Output()
+
+    # Fonction de mise à jour du graphique
+    def update(change=None):  # pylint: disable=W0613
+        """
+        Met à jour le graphique interactif lorsque l'utilisateur change la tranche sélectionnée.
+        """
+        with out:
+            clear_output(wait=True)
+            evolution_licences_tranches_grandes_age(
                 data_complet, tranche=tranche_widget.value
             )
 
