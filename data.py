@@ -21,6 +21,7 @@ URL_JO = "https://fr.wikipedia.org/wiki/France_aux_Jeux_olympiques"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = BASE_DIR
 
+
 # --- Chargement de la page Wikipedia ---
 def charger_page_wiki(url=URL_JO):
     """
@@ -37,9 +38,7 @@ def charger_page_wiki(url=URL_JO):
         Objet BeautifulSoup contenant le HTML parsé.
     """
     response = requests.get(
-        url,
-        headers={"User-Agent": "Python data science project"},
-        timeout=10
+        url, headers={"User-Agent": "Python data science project"}, timeout=10
     )
     response.raise_for_status()
     return BeautifulSoup(response.content, "lxml")
@@ -167,10 +166,42 @@ def fusionner_bases(data_or, data_argent, data_bronze):
 
     # Ajout des codes sport
     code_list = [
-        "ATH", "AVI", "BAD", "BAK", "BOX", "DIV", "CAK", "CYC", "ESD",
-        "ESC", "FOO", "GOL", "GYM", "HAL", "HAN", "HOC", "JUD", "KAR",
-        "LUT", "NAT", "DIV", "PEN", "DIV", "RUG", "SKT", "SUR", "TAE",
-        "TEN", "TDT", "TIR", "TAR", "TRI", "VOI", "VOL", "DIV", "EQU"
+        "ATH",
+        "AVI",
+        "BAD",
+        "BAK",
+        "BOX",
+        "DIV",
+        "CAK",
+        "CYC",
+        "ESD",
+        "ESC",
+        "FOO",
+        "GOL",
+        "GYM",
+        "HAL",
+        "HAN",
+        "HOC",
+        "JUD",
+        "KAR",
+        "LUT",
+        "NAT",
+        "DIV",
+        "PEN",
+        "DIV",
+        "RUG",
+        "SKT",
+        "SUR",
+        "TAE",
+        "TEN",
+        "TDT",
+        "TIR",
+        "TAR",
+        "TRI",
+        "VOI",
+        "VOL",
+        "DIV",
+        "EQU",
     ]
     data_medailles.insert(0, "code_sport", code_list)
 
@@ -213,7 +244,9 @@ def gel_base_medailles_finale(filename="data_medailles_jo.csv"):
 
     return data_medailles
 
+
 # --- Données de Licences ---
+
 
 def reorganiser_colonnes(liste_fichiers):
     """
@@ -239,6 +272,7 @@ def reorganiser_colonnes(liste_fichiers):
 
     return tables
 
+
 def normalisation_unicode(table):
     """
     Normalise les caractères en unicode dans une table et renvoie un data frame pandas.
@@ -255,17 +289,20 @@ def normalisation_unicode(table):
     """
     df = table.to_pandas()
 
-    #normalisation des caractères en unicode pour les variables de fédération
+    # normalisation des caractères en unicode pour les variables de fédération
     df["Fédération"] = df["Fédération"].apply(
         lambda x: unicodedata.normalize("NFKC", str(x))
     )
 
-    #règle le problème d'apostrophe sur la fédération française d'hélicoptère
+    # règle le problème d'apostrophe sur la fédération française d'hélicoptère
     df["Fédération"] = df["Fédération"].str.replace(
-        "Fédération Française d’hélicoptère", "Fédération Française d'hélicoptère", regex=False
+        "Fédération Française d’hélicoptère",
+        "Fédération Française d'hélicoptère",
+        regex=False,
     )
 
     return df
+
 
 def code_sport(df):
     """
@@ -281,54 +318,137 @@ def code_sport(df):
     df : pd.DataFrame
         Dataframe pandas avec la nouvelle colonne code_sport.
     """
-    #liste de codes sport dont l'ordre correspond à celui de la liste des fédérations.
-    code_list = ["ATH", "AVI", "BAD", "BAK",
-             "BOX", "CAK", "CYC", "EQU", 
-             "ESC", "FOO", "DIV", "GYM", 
-             "HAL", "HAN", "HOC", "JUD", 
-             "LUT", "NAT", "PEN", "DIV", 
-             "TAE", "TEN", "TDT", "TIR", 
-             "TAR", "TRI", "VOI", "VOL", 
-             "DIV", "GOL", "RUG", "ESD", 
-             "SKT", "SUR", "BAS", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "KAR", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "RUG", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV", "DIV", "DIV", 
-             "DIV", "DIV"]
+    # liste de codes sport dont l'ordre correspond à celui de la liste des fédérations.
+    code_list = [
+        "ATH",
+        "AVI",
+        "BAD",
+        "BAK",
+        "BOX",
+        "CAK",
+        "CYC",
+        "EQU",
+        "ESC",
+        "FOO",
+        "DIV",
+        "GYM",
+        "HAL",
+        "HAN",
+        "HOC",
+        "JUD",
+        "LUT",
+        "NAT",
+        "PEN",
+        "DIV",
+        "TAE",
+        "TEN",
+        "TDT",
+        "TIR",
+        "TAR",
+        "TRI",
+        "VOI",
+        "VOL",
+        "DIV",
+        "GOL",
+        "RUG",
+        "ESD",
+        "SKT",
+        "SUR",
+        "BAS",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "KAR",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "RUG",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+    ]
 
-    #appariement des fédérations avec le bon code sport. 
+    # appariement des fédérations avec le bon code sport.
     fed_list = df["Fédération"].unique()
-    cs = pd.DataFrame({
-        "Fédération": fed_list,
-        "Code_sport": code_list
-        })
+    cs = pd.DataFrame({"Fédération": fed_list, "Code_sport": code_list})
 
-    #left merge avec la base complète.
-    df = df.merge(
-        cs,
-        left_on = ["Fédération"],
-        right_on = ["Fédération"],
-        how = "left"
-    )
+    # left merge avec la base complète.
+    df = df.merge(cs, left_on=["Fédération"], right_on=["Fédération"], how="left")
 
     return df
+
 
 def code_dep(df, var):
     """
@@ -350,6 +470,7 @@ def code_dep(df, var):
 
     return df
 
+
 def renommer_colonnes(df):
     """
     Renomme les colonnes du data frame licenciés.
@@ -364,11 +485,25 @@ def renommer_colonnes(df):
     df : pd.DataFrame
         Dataframe pandas avec colonnes renommées.
     """
-    df.columns = ['code_2024', 'code_annee_n', 'codes_2016_2024', 'federation', 'annee',
-       'sexe', 'age', 'tranche_age', 'grande_tranche_age', 'region',
-       'departement_long', 'licences_annuelles', 'code_sport','code_dep']
+    df.columns = [
+        "code_2024",
+        "code_annee_n",
+        "codes_2016_2024",
+        "federation",
+        "annee",
+        "sexe",
+        "age",
+        "tranche_age",
+        "grande_tranche_age",
+        "region",
+        "departement_long",
+        "licences_annuelles",
+        "code_sport",
+        "code_dep",
+    ]
 
     return df
+
 
 def gel_licences(df, nom_fichier="data_licences.parquet"):
     """
@@ -385,6 +520,7 @@ def gel_licences(df, nom_fichier="data_licences.parquet"):
     table = pa.Table.from_pandas(df)
     pq.write_table(table, chemin_sortie)
 
+
 def calcul_ratio_nr_annee(df, annee, var):
     """
     Calcule le ratio de licenciés 'Non Répartis' (NR) par année, pour la variable désirée.
@@ -392,7 +528,7 @@ def calcul_ratio_nr_annee(df, annee, var):
     Paramètres
     ----------
     df : pd.DataFrame
-        Le DataFrame pandas contenant les colonnes 'annee', 'code_dep' et 
+        Le DataFrame pandas contenant les colonnes 'annee', 'code_dep' et
         'licences_annuelles'.
 
     Retour
@@ -400,26 +536,31 @@ def calcul_ratio_nr_annee(df, annee, var):
     np.float(64)
         Le ratio de licenciés non répartis sur une année, pour la variable désirée.
     """
-    
-    #création d'un data frame sélectionnant les effectifs non répartis 
+    # création d'un data frame sélectionnant les effectifs non répartis
     if var == "code_dep":
-        df_nr = df[df[var].isna()] #les "non répartis" sont inscrits en NaN pour le code département
+        df_nr = df[
+            df[var].isna()
+        ]  # les "non répartis" sont inscrits en NaN pour le code département
     else:
         df_nr = df[df[var] == "NR - Non réparti"]
 
-    return df_nr["licences_annuelles"][df_nr["annee"] == annee].sum()/df["licences_annuelles"][df["annee"]==annee].sum()
+    return (
+        df_nr["licences_annuelles"][df_nr["annee"] == annee].sum()
+        / df["licences_annuelles"][df["annee"] == annee].sum()
+    )
 
-def calcul_ratio_nr(df, var:str):
+
+def calcul_ratio_nr(df, var: str):
     """
     Calcule le ratio de licenciés 'Non Répartis' (NR) dans toute la base, pour la variable désirée.
 
     Paramètres
     ----------
     df : pd.DataFrame
-        Le DataFrame pandas contenant les colonnes 'code_dep' et 
+        Le DataFrame pandas contenant les colonnes 'code_dep' et
         'licences_annuelles'.
     var : str
-        Variable pour laquelle on désire calculer le ratio de non répartition. 
+        Variable pour laquelle on désire calculer le ratio de non répartition.
 
     Retour
     ------
@@ -427,25 +568,28 @@ def calcul_ratio_nr(df, var:str):
         Le ratio de licenciés non répartis dans toute la base, pour la variable désirée.
     """
 
-    #création d'un data frame sélectionnant les effectifs non répartis
+    # création d'un data frame sélectionnant les effectifs non répartis
     if var == "code_dep":
-        df_nr = df[df[var].isna()] #les "non répartis" sont inscrits en NaN pour le code département
+        df_nr = df[
+            df[var].isna()
+        ]  # les "non répartis" sont inscrits en NaN pour le code département
     else:
-        df_nr = df[df[var] == "NR - Non réparti"] 
-    return df_nr["licences_annuelles"].sum()/df["licences_annuelles"].sum()
+        df_nr = df[df[var] == "NR - Non réparti"]
+    return df_nr["licences_annuelles"].sum() / df["licences_annuelles"].sum()
 
-def tableau_ratios_nr(df, var:str):
+
+def tableau_ratios_nr(df, var: str):
     """
-    Calcule et présente le ratio de licenciés 'Non Répartis' (NR) par année et le ratio global 
+    Calcule et présente le ratio de licenciés 'Non Répartis' (NR) par année et le ratio global
     sous forme de DataFrame Pandas, pour la variable désirée.
 
     Paramètres
     ----------
     df : pd.DataFrame
-        Le DataFrame pandas contenant les colonnes 'annee', 'code_dep' et 
+        Le DataFrame pandas contenant les colonnes 'annee', 'code_dep' et
         'licences_annuelles'.
     var : str
-        Variable pour laquelle on désire calculer le ratio de non répartition. 
+        Variable pour laquelle on désire calculer le ratio de non répartition.
 
 
     Retour
@@ -457,86 +601,93 @@ def tableau_ratios_nr(df, var:str):
     resultats = {}
     annees = sorted(df["annee"].unique())
 
-    #calcul du ratio pour chaque année
+    # calcul du ratio pour chaque année
     for a in annees:
         ratio = calcul_ratio_nr_annee(df, a, var)
         resultats[a] = [f"{ratio * 100:.2f} %"]
-   
-    #calcul du ratio global
+
+    # calcul du ratio global
     ratio_global = calcul_ratio_nr(df, var)
     resultats["Global"] = [f"{ratio_global * 100:.2f} %"]
 
-    #création d'un data frame pour présenter proprement les résultats
+    # création d'un data frame pour présenter proprement les résultats
     df_ratios_nr = pd.DataFrame(resultats, index=[f"Ratio de non répartis {var}"])
 
     return df_ratios_nr
 
+
 # --- Données de population départementale ---
+
 
 def melodi_extraction(url_api):
     """
-    Extrait les données de population au niveau départemental pour les années disponibles dans l'API Melodi. 
+    Extrait les données de population au niveau départemental
+    pour les années disponibles dans l'API Melodi.
 
     Paramètres
     ----------
-    url_api : url 
+    url_api : url
         URL de l'API à interroger.
 
     Retour
     ------
     data_pop : pd.DataFrame
-        Data frame recensant la population départementale pour les années disponibles. 
+        Data frame recensant la population départementale pour les années disponibles.
     """
-    get_data = requests.get(url_api, verify=True, timeout = 60)
+    get_data = requests.get(url_api, verify=True, timeout=60)
     data_from_net = get_data.content
     data = json.loads(data_from_net)
 
     # Extraction des informations du jeu de données
-    identifier = data['identifier']
+    identifier = data["identifier"]
 
-    #Extraction des observations du jeu de données filtré, sur lesquelles on va boucler
-    observations = data['observations']
+    # Extraction des observations du jeu de données filtré, sur lesquelles on va boucler
+    observations = data["observations"]
     extracted_data = []
 
-    #Boucle de lecture des observations dans le json
+    # Boucle de lecture des observations dans le json
     for obs in observations:
-        dimensions = obs['dimensions']
+        dimensions = obs["dimensions"]
 
-    #Suivant les jeux de données attributes est présent ou non
-        if 'attributes' in obs:
-            attributes = obs['attributes']
+        # Suivant les jeux de données attributes est présent ou non
+        if "attributes" in obs:
+            attributes = obs["attributes"]
         else:
             attributes = None
 
-    #Suivant les jeux de données value peut être absent
-        if 'value' in obs['measures']['OBS_VALUE_NIVEAU']:
-            measures = obs['measures']['OBS_VALUE_NIVEAU']['value']
+        # Suivant les jeux de données value peut être absent
+        if "value" in obs["measures"]["OBS_VALUE_NIVEAU"]:
+            measures = obs["measures"]["OBS_VALUE_NIVEAU"]["value"]
         else:
             measures = None
 
-    #Rassemble tout dans un objet
-        if 'attributes' in obs:
-            combined_data = {**dimensions,**attributes, 'OBS_VALUE_NIVEAU': measures}
+        # Rassemble tout dans un objet
+        if "attributes" in obs:
+            combined_data = {**dimensions, **attributes, "OBS_VALUE_NIVEAU": measures}
         else:
-            combined_data = {**dimensions, 'OBS_VALUE_NIVEAU': measures}
+            combined_data = {**dimensions, "OBS_VALUE_NIVEAU": measures}
 
         extracted_data.append(combined_data)
 
-    #Création d'un dataframe pandas
+    # Création d'un dataframe pandas
     data_pop = pd.DataFrame(extracted_data)
 
-    print(f'Jeu de données : {identifier} \nTitre : Populations municipales de 2016 à 2023 ')
+    print(
+        f"Jeu de données : {identifier} \nTitre : Populations municipales de 2016 à 2023 "
+    )
 
     return data_pop
 
+
 def code_dep_pop(data_pop, var):
     """
-    Extrait le code département à partir de la variable de département de la base de population départementale annuelle.
-    
-    Paramètres 
+    Extrait le code département à partir de la variable de
+    département de la base de population départementale annuelle.
+
+    Paramètres
     ----------
     data_pop : pd.DataFrame
-        Data frame de population avec colonnes renommmées. 
+        Data frame de population avec colonnes renommmées.
     var : str
         Variable à partir de laquelle extraire le code département
 
@@ -545,42 +696,48 @@ def code_dep_pop(data_pop, var):
     data_pop : pd.DataFrame
         Data frame de population annuelle avec la nouvelle variable "code_dep"
     """
-    data_pop["code_dep"] = data_pop[var].str.extract(r'(..)$') #numéro du département : deux derniers caractères
+    data_pop["code_dep"] = data_pop[var].str.extract(
+        r"(..)$"
+    )  # numéro du département : deux derniers caractères
 
     return data_pop
 
+
 def clean_population(df):
     """
-    Nettoie la base de données de population : 
+    Nettoie la base de données de population :
         Force les types des variables
         Sélectionne les départements cartographiables
         Trie les départements par ordre croissant
-    
+
     Paramètres
     ----------
-    df : pd.DataFrame 
-        Data frame de population devant être nettoyé. 
-    
+    df : pd.DataFrame
+        Data frame de population devant être nettoyé.
+
     Retour
     ------
-    data_pop_clean : pd.DataFrame 
-        Data frame de population nottoyé. 
+    data_pop_clean : pd.DataFrame
+        Data frame de population nottoyé.
     """
     data_pop_clean = df.copy()
 
-    #Conversion de l'année en entier
+    # Conversion de l'année en entier
     data_pop_clean["annee"] = data_pop_clean["annee"].astype(int)
 
-    #Tri des départements
-    data_pop_clean = data_pop_clean.sort_values(by="code_dep", ascending=True).reset_index(drop=True)
+    # Tri des départements
+    data_pop_clean = data_pop_clean.sort_values(
+        by="code_dep", ascending=True
+    ).reset_index(drop=True)
 
-    #Suppression des départements non cartographiables
+    # Suppression des départements non cartographiables
     data_pop_clean = data_pop_clean.dropna(subset=["code_dep"]).copy()
 
-    #Conversion du code département en string
+    # Conversion du code département en string
     data_pop_clean["code_dep"] = data_pop_clean["code_dep"].astype(str)
 
     return data_pop_clean
+
 
 def gel_population(df, nom_fichier="population_dept.csv"):
     """
