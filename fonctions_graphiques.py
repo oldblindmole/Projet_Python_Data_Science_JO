@@ -14,9 +14,7 @@ from plotly.subplots import make_subplots
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 
-
-# Chargement des données
-
+# II. Chargement des données
 
 def charger_donnees(
     data_complet_path="data/data_complet.parquet",
@@ -58,45 +56,7 @@ def charger_donnees(
     return data_complet, gdf_dep, data_pop
 
 
-# Evolution des licenciés selon le nombre de medailles
-def _table_licences_par_sport_annee(df: pd.DataFrame, sport: str) -> pd.DataFrame:
-    d = df if sport == "all" else df[df["sport"] == sport]
-    lic = (
-        d.groupby("annee", as_index=False)["licences_annuelles"]
-        .sum()
-        .sort_values("annee")
-    )
-    return lic
-
-def _medailles_par_sport(df: pd.DataFrame, sport: str) -> dict:
-    """
-    Retourne un dict {2016: {'or':x,'argent':y,'bronze':z}, 2020:..., 2024:...}
-    """
-    cols_needed = [
-        "sport",
-        "2016_or","2016_argent","2016_bronze",
-        "2020_or","2020_argent","2020_bronze",
-        "2024_or","2024_argent","2024_bronze",
-    ]
-    cols_needed = [c for c in cols_needed if c in df.columns]
-    med = df[cols_needed].drop_duplicates(subset=["sport"]).copy()
-    med = med.groupby("sport", as_index=False).first()
-
-    row = med[med["sport"] == sport]
-    if row.empty:
-        return {2016: {"or": 0, "argent": 0, "bronze": 0},
-                2020: {"or": 0, "argent": 0, "bronze": 0},
-                2024: {"or": 0, "argent": 0, "bronze": 0}}
-
-    row = row.iloc[0]
-    def get(col):
-        return 0 if (col not in med.columns or pd.isna(row[col])) else int(row[col])
-
-    return {
-        2016: {"or": get("2016_or"), "argent": get("2016_argent"), "bronze": get("2016_bronze")},
-        2020: {"or": get("2020_or"), "argent": get("2020_argent"), "bronze": get("2020_bronze")},
-        2024: {"or": get("2024_or"), "argent": get("2024_argent"), "bronze": get("2024_bronze")},
-    }
+# II.A. Medailles et licenciés
 
 def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     """
@@ -113,7 +73,7 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     medals = {y: {"or": 0, "argent": 0, "bronze": 0} for y in years}
     if sport != "all":
         med_s = _medailles_par_sport(df, sport)
-        for y in [2016, 2020, 2024]:
+        for y in [2016, 2021, 2024]:
             if y in medals:
                 medals[y] = med_s.get(y, {"or": 0, "argent": 0, "bronze": 0})
 
@@ -176,6 +136,7 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
 
     fig.show()
 
+
 def widget_graphique_licences_et_medailles(data_complet: pd.DataFrame):
     """#TODO"""
     sports = ["all"] + sorted(data_complet["sport"].dropna().unique())
@@ -190,6 +151,248 @@ def widget_graphique_licences_et_medailles(data_complet: pd.DataFrame):
     sport_widget.observe(update, names="value")
     display(sport_widget, out)
     update()
+
+
+def classement_sports_medailles(data_complet, annee="all"):
+    """
+    Construit un classement des sports selon le nombre de médailles remportées
+    aux Jeux Olympiques.
+
+    Deux modes sont possibles :
+    - annee = "all" : cumul des JO 2016, 2020 et 2024
+    - annee = 2016, 2020 ou 2024 : classement pour une édition donnée
+
+    Les médailles sont pondérées de la façon suivante :
+    - Or = 3 points
+    - Argent = 2 points
+    - Bronze = 1 point
+
+    Les sports n'ayant remporté aucune médaille sur la période considérée
+    sont exclus du classement.
+
+    Paramètres
+    ----------
+    data_complet : pandas.DataFrame
+        Base complète contenant la colonne 'sport' et les colonnes de médailles.
+    annee : int ou str, optionnel (par défaut = "all")
+        Année des Jeux Olympiques à considérer (2016, 2020, 2024)
+        ou "all" pour un cumul sur toutes les éditions.
+
+    Retour
+    ------
+    df_classement : pandas.DataFrame
+        Table de classement des sports, triée par score pondéré décroissant.
+    """
+    # Années JO disponibles
+    annees_disponibles = [2016, 2020, 2024]
+
+    if annee == "all":
+        annees = annees_disponibles
+    else:
+        if annee not in annees_disponibles:
+            raise ValueError(
+                f"annee doit être dans {annees_disponibles} ou 'all'"
+            )
+        annees = [annee]
+
+    # Colonnes de médailles à utiliser
+    cols_medailles = ["sport"]
+    for a in annees:
+        cols_medailles += [f"{a}_or", f"{a}_argent", f"{a}_bronze"]
+
+    # Une ligne par sport (les médailles sont répétées dans la base)
+    df = (
+        data_complet[cols_medailles]
+        .drop_duplicates(subset=["sport"])
+        .groupby("sport", as_index=False)
+        .first()
+    )
+
+    # Initialisation des totaux
+    df["total_or"] = 0
+    df["total_argent"] = 0
+    df["total_bronze"] = 0
+
+    # Cumul des médailles sur les années sélectionnées
+    for a in annees:
+        df["total_or"] += df[f"{a}_or"]
+        df["total_argent"] += df[f"{a}_argent"]
+        df["total_bronze"] += df[f"{a}_bronze"]
+
+    # Total simple
+    df["total_medailles"] = (
+        df["total_or"] + df["total_argent"] + df["total_bronze"]
+    )
+
+    # Score pondéré
+    df["score_pondere"] = (
+        3 * df["total_or"]
+        + 2 * df["total_argent"]
+        + 1 * df["total_bronze"]
+    )
+
+    # Exclusion des sports sans médailles et classement
+    df_classement = (
+        df[df["total_medailles"] > 0]
+        .sort_values("score_pondere", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    # Colonnes finales
+    df_classement = df_classement[
+        ["sport", "total_medailles", "total_or", "total_argent", "total_bronze", "score_pondere"]
+    ]
+
+    return df_classement
+
+
+def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
+    """
+    Calcule le taux de croissance du nombre de licenciés sportifs entre l'année
+    des Jeux Olympiques (t) et t + delta, en se restreignant aux sports ayant
+    remporté au moins une médaille lors de cette même édition.
+
+    Cas particulier :
+    - Les Jeux Olympiques de 2020 s'étant tenus en 2021, l'année 2021 est utilisée
+      comme année de référence pour les licenciés, tandis que les médailles
+      restent rattachées à l'édition JO 2020.
+
+    Paramètres
+    ----------
+    data_complet : pandas.DataFrame
+        Base complète des licenciés. Doit contenir au minimum :
+        - 'sport', 'annee', 'licences_annuelles'
+        - les colonnes de médailles : '{annee}_or', '{annee}_argent', '{annee}_bronze'
+    annee_jo : int
+        Année des Jeux Olympiques (ex : 2016, 2020, 2024).
+    delta : int, optionnel (par défaut = 2)
+        Horizon temporel (en années) pour mesurer la croissance post-JO.
+
+    Retour
+    ------
+    df_croissance : pandas.DataFrame
+        Table classée par taux de croissance décroissant, contenant :
+        - sport
+        - annee_jo
+        - annee_licences_t
+        - licences_t
+        - licences_t_plus_2
+        - taux_croissance (en %)
+    """
+    # Agrégation préalable : licenciés par sport et par année
+    lic_sport_annee = (
+        data_complet
+        .groupby(["sport", "annee"], as_index=False)["licences_annuelles"]
+        .sum()
+    )
+
+    # Année de référence pour les licenciés (cas particulier JO 2020)
+    annee_lic = 2021 if annee_jo == 2020 else annee_jo
+    annee_lic_plus_delta = annee_lic + delta
+
+    rows = []
+
+    # Identification des sports ayant remporté au moins une médaille l'année JO
+    cols_jo = [f"{annee_jo}_or", f"{annee_jo}_argent", f"{annee_jo}_bronze"]
+    sports_medailes = (
+        data_complet[
+            data_complet[cols_jo].fillna(0).sum(axis=1) > 0
+        ]["sport"]
+        .dropna()
+        .unique()
+    )
+
+    # Calcul du taux de croissance pour chaque sport médaillé
+    for sport in sports_medailes:
+        df_s = lic_sport_annee[lic_sport_annee["sport"] == sport]
+
+        # On vérifie la présence des deux années nécessaires
+        if (
+            (df_s["annee"] == annee_lic).any()
+            and (df_s["annee"] == annee_lic_plus_delta).any()
+        ):
+            L_t = float(
+                df_s.loc[df_s["annee"] == annee_lic, "licences_annuelles"].iloc[0]
+            )
+            L_t_delta = float(
+                df_s.loc[df_s["annee"] == annee_lic_plus_delta, "licences_annuelles"].iloc[0]
+            )
+
+            # Sécurité : éviter une division par zéro
+            if L_t > 0:
+                rows.append({
+                    "sport": sport,
+                    "annee_jo": annee_jo,
+                    "annee_licences_t": annee_lic,
+                    "licences_t": L_t,
+                    "licences_t_plus_2": L_t_delta,
+                    "taux_croissance": 100 * (L_t_delta - L_t) / L_t
+                })
+
+    # Construction du DataFrame final
+    df_croissance = pd.DataFrame(
+        rows,
+        columns=[
+            "sport",
+            "annee_jo",
+            "annee_licences_t",
+            "licences_t",
+            "licences_t_plus_2",
+            "taux_croissance",
+        ],
+    )
+
+    # Classement par taux de croissance décroissant
+    if not df_croissance.empty:
+        df_croissance = (
+            df_croissance
+            .sort_values("taux_croissance", ascending=False)
+            .reset_index(drop=True)
+        )
+
+    return df_croissance
+
+
+
+# Evolution des licenciés selon le nombre de medailles
+def _table_licences_par_sport_annee(df: pd.DataFrame, sport: str) -> pd.DataFrame:
+    d = df if sport == "all" else df[df["sport"] == sport]
+    lic = (
+        d.groupby("annee", as_index=False)["licences_annuelles"]
+        .sum()
+        .sort_values("annee")
+    )
+    return lic
+
+def _medailles_par_sport(df: pd.DataFrame, sport: str) -> dict:
+    """
+    Retourne un dict {2016: {'or':x,'argent':y,'bronze':z}, 2020:..., 2024:...}
+    """
+    cols_needed = [
+        "sport",
+        "2016_or","2016_argent","2016_bronze",
+        "2020_or","2020_argent","2020_bronze",
+        "2024_or","2024_argent","2024_bronze",
+    ]
+    cols_needed = [c for c in cols_needed if c in df.columns]
+    med = df[cols_needed].drop_duplicates(subset=["sport"]).copy()
+    med = med.groupby("sport", as_index=False).first()
+
+    row = med[med["sport"] == sport]
+    if row.empty:
+        return {2016: {"or": 0, "argent": 0, "bronze": 0},
+                2021: {"or": 0, "argent": 0, "bronze": 0},
+                2024: {"or": 0, "argent": 0, "bronze": 0}}
+
+    row = row.iloc[0]
+    def get(col):
+        return 0 if (col not in med.columns or pd.isna(row[col])) else int(row[col])
+
+    return {
+        2016: {"or": get("2016_or"), "argent": get("2016_argent"), "bronze": get("2016_bronze")},
+        2021: {"or": get("2020_or"), "argent": get("2020_argent"), "bronze": get("2020_bronze")},
+        2024: {"or": get("2024_or"), "argent": get("2024_argent"), "bronze": get("2024_bronze")},
+    }
 
 
 # Cartes par département
