@@ -4,7 +4,6 @@ Ces fonctions affichent avec plt.show().
 """
 
 import matplotlib.pyplot as plt
-#import geopandas as gpd
 
 
 def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
