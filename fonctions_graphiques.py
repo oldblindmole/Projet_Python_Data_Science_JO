@@ -9,11 +9,52 @@ import pandas as pd
 import numpy as np
 import geopandas as gpd
 import matplotlib.pyplot as plt
+
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
 import ipywidgets as widgets
 from IPython.display import display, clear_output
+
+
+# helpers
+
+def _filtrer_sport(df: pd.DataFrame, sport: str):
+    """Retourne df filtré sur un sport, ou df inchangé si sport == 'all'."""
+    return df if sport == "all" else df[df["sport"] == sport]
+
+def _run_widget(update_fn, controls):
+    """
+    Affiche des contrôles + un Output, et relance update_fn() quand un contrôle change.
+
+    Paramètres
+    ----------
+    update_fn : callable
+        Fonction sans argument qui trace/affiche (elle lit les valeurs via closure).
+    controls : list
+        Liste de widgets (Dropdown, Slider...) à observer.
+
+    Retour
+    ------
+    out : widgets.Output
+        Output widget dans lequel sont affichés les graphiques.
+    """
+    out = widgets.Output()
+
+    def _wrapped_update(change=None):  # pylint: disable=unused-argument
+        with out:
+            clear_output(wait=True)
+            update_fn()
+
+    for c in controls:
+        c.observe(_wrapped_update, names="value")
+
+    display(*controls, out)
+    _wrapped_update()
+    return out
+
+
 
 # II. Chargement des données
 
@@ -63,27 +104,71 @@ def charger_donnees(
 
 def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     """
-    - x : années
-    - y1 : licences (courbe)
-    - y2 : médailles (barres empilées or/argent/bronze) uniquement 2016/2020/2024
-    """
-    lic = _table_licences_par_sport_annee(df, sport)
+    Graphique interactif combiné :
+    - x : années (celles présentes dans les données de licences)
+    - y1 : nombre de licenciés (courbe)
+    - y2 : médailles (barres empilées or/argent/bronze)
+      affichées uniquement aux années JO (2016, 2021, 2024) via un mapping
+      depuis les colonnes médailles (2016, 2020, 2024).
 
-    # Années affichées = années présentes dans les licences (plus lisible)
+    Paramètres
+    ----------
+    df : pandas.DataFrame
+        Base contenant au minimum : 'annee', 'sport', 'licences_annuelles'
+        + colonnes médailles : '2016_or', '2020_or', '2024_or', etc.
+    sport : str
+        "all" ou un libellé exact de sport.
+    """
+    # --- Licences (courbe) ---
+    d = df if sport == "all" else df[df["sport"] == sport]
+    lic = (
+        d.groupby("annee", as_index=False)["licences_annuelles"]
+        .sum()
+        .sort_values("annee")
+    )
+
     years = lic["annee"].tolist()
 
-    # Médailles : seulement années olympiques, 0 sinon
-    medals = {y: {"or": 0, "argent": 0, "bronze": 0} for y in years}
+    jo_col_years = [2016, 2020, 2024]
+    jo_display_year = {2016: 2016, 2020: 2021, 2024: 2024} 
+    medal_types = ("or", "argent", "bronze")
+    medal_colors = {"or": "#F2C300", "argent": "#B0B0B0", "bronze": "#8C6239"}
+
+    # --- Médailles (barres) ---
+    # On initialise à 0 sur toutes les années de la courbe licences
+    medals_by_year = {y: {m: 0 for m in medal_types} for y in years}
+
+    # On ne trace des médailles que pour un sport spécifique (pas "all")
     if sport != "all":
-        med_s = _medailles_par_sport(df, sport)
-        for y in [2016, 2021, 2024]:
-            if y in medals:
-                medals[y] = med_s.get(y, {"or": 0, "argent": 0, "bronze": 0})
+        # Récupère UNE ligne par sport pour les colonnes médailles
+        cols_needed = ["sport"] + [f"{y}_{m}" for y in jo_col_years for m in medal_types]
+        cols_needed = [c for c in cols_needed if c in df.columns]  # sécurité
 
-    med_or = [medals[y]["or"] for y in years]
-    med_arg = [medals[y]["argent"] for y in years]
-    med_bro = [medals[y]["bronze"] for y in years]
+        med = (
+            df[cols_needed]
+            .drop_duplicates(subset=["sport"])
+            .groupby("sport", as_index=False)
+            .first()
+        )
 
+        row = med[med["sport"] == sport]
+        if not row.empty:
+            row = row.iloc[0]
+
+            # Remplit uniquement les années JO affichées (2016, 2021, 2024)
+            for y_col in jo_col_years:
+                y_display = jo_display_year[y_col]
+                if y_display in medals_by_year:
+                    for m in medal_types:
+                        col = f"{y_col}_{m}"
+                        val = 0 if (col not in med.columns or pd.isna(row[col])) else int(row[col])
+                        medals_by_year[y_display][m] = val
+
+    med_or = [medals_by_year[y]["or"] for y in years]
+    med_arg = [medals_by_year[y]["argent"] for y in years]
+    med_bro = [medals_by_year[y]["bronze"] for y in years]
+
+    # --- Figure (double axe) ---
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     # Courbe licences (axe gauche)
@@ -98,35 +183,20 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
         secondary_y=False,
     )
 
-    # Barres médailles (axe droit), empilées
+    # Barres médailles (axe droit) empilées
     fig.add_trace(
-        go.Bar(
-            x=years,
-            y=med_or,
-            name="Or",
-            marker_color="#F2C300",  # jaune
-            hovertemplate="Année: %{x}<br>Or: %{y}<extra></extra>",
-        ),
+        go.Bar(x=years, y=med_or, name="Or", marker_color=medal_colors["or"],
+               hovertemplate="Année: %{x}<br>Or: %{y}<extra></extra>"),
         secondary_y=True,
     )
     fig.add_trace(
-        go.Bar(
-            x=years,
-            y=med_arg,
-            name="Argent",
-            marker_color="#B0B0B0",  # gris
-            hovertemplate="Année: %{x}<br>Argent: %{y}<extra></extra>",
-        ),
+        go.Bar(x=years, y=med_arg, name="Argent", marker_color=medal_colors["argent"],
+               hovertemplate="Année: %{x}<br>Argent: %{y}<extra></extra>"),
         secondary_y=True,
     )
     fig.add_trace(
-        go.Bar(
-            x=years,
-            y=med_bro,
-            name="Bronze",
-            marker_color="#8C6239",  # brun
-            hovertemplate="Année: %{x}<br>Bronze: %{y}<extra></extra>",
-        ),
+        go.Bar(x=years, y=med_bro, name="Bronze", marker_color=medal_colors["bronze"],
+               hovertemplate="Année: %{x}<br>Bronze: %{y}<extra></extra>"),
         secondary_y=True,
     )
 
@@ -136,10 +206,10 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
         width=1100,
         height=600,
         barmode="stack",
-        legend_title_text="Légende",
         hovermode="x unified",
+        legend_title_text="Légende",
     )
-    fig.update_xaxes(title_text="Années")
+    fig.update_xaxes(title_text="Année")
     fig.update_yaxes(title_text="Nombre de licenciés", secondary_y=False)
     fig.update_yaxes(title_text="Nombre de médailles", secondary_y=True)
 
@@ -157,9 +227,7 @@ def widget_graphique_licences_et_medailles(data_complet: pd.DataFrame):
             clear_output(wait=True)
             graphique_licences_et_medailles(data_complet, sport=sport_widget.value)
 
-    sport_widget.observe(update, names="value")
-    display(sport_widget, out)
-    update()
+    _run_widget(update, [sport_widget])
 
 
 def classement_sports_medailles(data_complet, annee="all"):
@@ -373,7 +441,8 @@ def licences_par_annee(df_lic, sport_code="all", sport_col="code_sport"):
     sport_col : str
         Nom de la colonne contenant le code sport (par défaut 'code_sport').
     output_widget : ipywidgets.Output ou None
-        Si fourni, le graphique sera affiché dans ce widget pour permettre une mise à jour interactive.
+        Si fourni, le graphique sera affiché dans ce widget pour
+        permettre une mise à jour interactive.
 
     Output
     ------
@@ -489,14 +558,7 @@ def widget_licences_par_sport(
 
             licences_par_annee(df, sport_code=sport_code, sport_col=sport_code_col)
 
-    # Liaison du widget à la fonction
-    sports_widget.observe(update_graph, names="value")
-
-    # Affichage initial
-    display(sports_widget, out)
-    update_graph()
-
-    return sports_widget, out
+    _run_widget(update_graph, [sports_widget])
 
 
 # Evolution des licenciés selon le nombre de medailles
@@ -617,9 +679,7 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     en gris clair avec un motif hachuré.
     """
     # Filtrage des données selon le sport sélectionné
-    df_filtered = (
-        data_complet if sport == "all" else data_complet[data_complet["sport"] == sport]
-    )
+    df_filtered = _filtrer_sport(data_complet, sport)
 
     # Agrégation des licences par département pour l'année choisie
     df_agg_lic = (
@@ -713,9 +773,8 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
     avec un motif hachuré.
     """
     # Filtrage des données selon le sport sélectionné
-    df_filtered = (
-        data_complet if sport == "all" else data_complet[data_complet["sport"] == sport]
-    )
+    df_filtered = _filtrer_sport(data_complet, sport)
+
 
     # Agrégation du nombre de licenciés par département pour chaque année
     df1 = (
@@ -833,13 +892,7 @@ def widgets_carte_licencies(data_complet, gdf_dep, data_pop):
                 sport=sport_widget.value,
             )
 
-    # Liaison widgets - fonction
-    annee_widget.observe(update, names="value")
-    sport_widget.observe(update, names="value")
-
-    # Affichage initial
-    display(annee_widget, sport_widget, out)
-    update()
+    _run_widget(update, [annee_widget, sport_widget])
 
 
 def widgets_evolution_licencies(data_complet, gdf_dep):
@@ -896,14 +949,7 @@ def widgets_evolution_licencies(data_complet, gdf_dep):
                 sport=sport_widget.value,
             )
 
-    # Liaison widgets - fonction
-    annee1_widget.observe(update, names="value")
-    annee2_widget.observe(update, names="value")
-    sport_widget.observe(update, names="value")
-
-    # Affichage initial
-    display(annee1_widget, annee2_widget, sport_widget, out)
-    update()
+    _run_widget(update, [annee1_widget, annee2_widget, sport_widget])
 
 
 # Graphiques par âge
@@ -1319,12 +1365,7 @@ def widgets_evolution_licencies_age(data_complet):
             clear_output(wait=True)
             evolution_licencies_age(data_complet, age=age_widget.value)
 
-    # Liaison du widget à la fonction de mise à jour
-    age_widget.observe(update, names="value")
-
-    # Affichage initial
-    display(age_widget, out)
-    update()
+    _run_widget(update, [age_widget])
 
 
 def widgets_evolution_licences_tranches_fines_age(data_complet):
@@ -1363,12 +1404,7 @@ def widgets_evolution_licences_tranches_fines_age(data_complet):
                 data_complet, tranche=tranche_widget.value
             )
 
-    # Liaison du widget à la fonction de mise à jour
-    tranche_widget.observe(update, names="value")
-
-    # Affichage initial
-    display(tranche_widget, out)
-    update()
+    _run_widget(update, [tranche_widget])
 
 
 def widgets_evolution_licences_tranches_grande_age(data_complet):
@@ -1407,12 +1443,7 @@ def widgets_evolution_licences_tranches_grande_age(data_complet):
                 data_complet, tranche=tranche_widget.value
             )
 
-    # Liaison du widget à la fonction de mise à jour
-    tranche_widget.observe(update, names="value")
-
-    # Affichage initial
-    display(tranche_widget, out)
-    update()
+    _run_widget(update, [tranche_widget])
 
 
 def widgets_repartition_grandes_tranches_age_par_sport(data_complet):
@@ -1451,12 +1482,7 @@ def widgets_repartition_grandes_tranches_age_par_sport(data_complet):
                 data_complet, annee=annees_widget.value
             )
 
-    # Liaison du widget à la fonction de mise à jour
-    annees_widget.observe(update, names="value")
-
-    # Affichage initial
-    display(annees_widget, out)
-    update()
+    _run_widget(update, [annees_widget])
 
 
 def widgets_repartition_fines_tranches_age_par_sport(data_complet):
@@ -1495,9 +1521,4 @@ def widgets_repartition_fines_tranches_age_par_sport(data_complet):
                 data_complet, annee=annees_widget.value
             )
 
-    # Liaison du widget à la fonction de mise à jour
-    annees_widget.observe(update, names="value")
-
-    # Affichage initial
-    display(annees_widget, out)
-    update()
+    _run_widget(update, [annees_widget])
