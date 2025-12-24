@@ -682,6 +682,7 @@ def charger_donnees(
 
     # Données géographiques (départements)
     gdf_dep = gpd.read_file(geojson_path)
+    gdf_dep = gdf_dep.rename(columns={"code": "code_dep"})
 
     # Table population (référence pour les proportions)
     data_pop = pd.read_csv(population_path)

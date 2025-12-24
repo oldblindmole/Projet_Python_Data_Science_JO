@@ -7,7 +7,7 @@ import pandas as pd
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 
-from visualisation_plotly import (
+from .visualisation_plotly import (
     graphique_licences_et_medailles,
     licences_par_annee,
     evolution_licencies_age,
@@ -15,15 +15,15 @@ from visualisation_plotly import (
     evolution_licences_tranches_grandes_age,
     repartition_grandes_tranches_age_par_sport,
     repartition_fines_tranches_age_par_sport,
+    plot_licences_par_sexe,
     plot_part_femmes,
     plot_part_jeunes,
     plot_heatmap_nbr_licencies,
 )
-from visualisation_cartes import (
+from .visualisation_cartes import (
     carte_licencies,
     carte_evolution_licencies,
 )
-
 
 
 def _run_widget(update_fn, controls):
@@ -44,7 +44,7 @@ def _run_widget(update_fn, controls):
     """
     out = widgets.Output()
 
-    def _wrapped_update(change=None): # pylint: disable=W0613
+    def _wrapped_update(change=None):  # pylint: disable=W0613
         with out:
             clear_output(wait=True)
             res = update_fn()
@@ -377,31 +377,93 @@ def widgets_repartition_fines_tranches_age_par_sport(data_complet):
     _run_widget(update, [annees_widget])
 
 
-def widgets_part_jeunes(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
+def widgets_licences_par_sexe(df_lic, sport_col="code_sport"):
     """
-    Widget : choix du sport + slider age_max → affiche la part des jeunes.
+    Crée un widget de sélection du sport pour afficher les licences par sexe.
+
+    Paramètres
+    ----------
+    df_lic : pandas.DataFrame
+        Base des licenciés.
+    sport_col : str, optionnel
+        Nom de la colonne contenant le code du sport utilisé pour le filtrage
+        (par défaut "code_sport").
+
+    Retour
+    ------
+    None
+        Affiche un widget + le graphique Plotly associé.
     """
+
+    # Liste des sports disponibles pour le widget
     sports = ["all"] + sorted(df_lic["sport"].dropna().unique())
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
+
+    def update():
+        """Fonction de mise à jour appelée lors d'un changement de sélection."""
+        selected = sport_widget.value
+
+        # Cas : tous les sports
+        if selected == "all":
+            return plot_licences_par_sexe(df_lic, sport_code="all", sport_col=sport_col)
+
+        # Récupération du ou des codes associés au sport sélectionné
+        codes = df_lic.loc[df_lic["sport"] == selected, sport_col].dropna().unique()
+
+        # Si plusieurs codes existent, on les passe sous forme de liste
+        code = codes[0] if len(codes) == 1 else list(codes)
+
+        return plot_licences_par_sexe(df_lic, sport_code=code, sport_col=sport_col)
+
+    _run_widget(update, [sport_widget])
+
+
+def widgets_part_jeunes(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
+    """
+    Crée un widget interactif pour visualiser la part de jeunes licenciés.
+
+    Paramètres
+    ----------
+    df_lic : pandas.DataFrame
+        Base des licenciés contenant au minimum les colonnes :
+        - 'sport' : nom du sport (str)
+        - sport_col : code du sport (par défaut 'code_sport')
+        - toutes les colonnes nécessaires à `plot_part_jeunes`
+    sport_col : str, optionnel
+        Nom de la colonne contenant le code sport (par défaut "code_sport").
+
+    Retour
+    ------
+    None
+        Affiche un widget + le graphique Plotly associé.
+    """
+
+    # Liste des sports disponibles
+    sports = ["all"] + sorted(df_lic["sport"].dropna().unique())
+    sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
+
+    # Slider de choix du seuil d'âge (âge max)
     age_widget = widgets.IntSlider(
         value=15, min=5, max=30, step=1, description="Âge max :"
     )
 
     def update():
+        """Met à jour la figure en fonction du sport et du seuil d'âge sélectionnés."""
         selected = sport_widget.value
         age_max = age_widget.value
 
+        # Cas : tous les sports
         if selected == "all":
             return plot_part_jeunes(
                 df_lic, age_max=age_max, sport_code="all", sport_col=sport_col
             )
 
+        # Récupération du ou des codes associés au sport sélectionné
         codes = df_lic.loc[df_lic["sport"] == selected, sport_col].dropna().unique()
-        if len(codes) == 0:
-            print(f"Aucun code sport trouvé pour : {selected}")
-            return None
 
+        # Si plusieurs codes existent, on les passe sous forme de liste
         code = codes[0] if len(codes) == 1 else list(codes)
+
         return plot_part_jeunes(
             df_lic, age_max=age_max, sport_code=code, sport_col=sport_col
         )
@@ -409,24 +471,44 @@ def widgets_part_jeunes(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
     _run_widget(update, [sport_widget, age_widget])
 
 
-def widgets_part_femmes(df_lic, sport_col = "code_sport"):
+def widgets_part_femmes(df_lic, sport_col="code_sport"):
     """
-    Widget : choix du sport → affiche la part des femmes.
+    Crée un widget interactif pour visualiser la part de femmes parmi les licenciés.
+
+    Paramètres
+    ----------
+    df_lic : pandas.DataFrame
+        Base des licenciés contenant au minimum les colonnes :
+        - 'sport' : nom du sport (str)
+        - sport_col : code du sport (par défaut 'code_sport')
+        - toutes les colonnes nécessaires à `plot_part_femmes`
+    sport_col : str, optionnel
+        Nom de la colonne contenant le code sport (par défaut "code_sport").
+
+    Retour
+    ------
+    None
+        Affiche un widget + le graphique Plotly associé.
     """
+
+    # Liste des sports disponibles
     sports = ["all"] + sorted(df_lic["sport"].dropna().unique())
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
 
     def update():
+        """Met à jour la figure en fonction du sport et du seuil d'âge sélectionnés."""
         selected = sport_widget.value
+
+        # Cas : tous les sports
         if selected == "all":
             return plot_part_femmes(df_lic, sport_code="all", sport_col=sport_col)
 
+        # Récupération du ou des codes associés au sport sélectionné
         codes = df_lic.loc[df_lic["sport"] == selected, sport_col].dropna().unique()
-        if len(codes) == 0:
-            print(f"Aucun code sport trouvé pour : {selected}")
-            return None
 
+        # Si plusieurs codes existent, on les passe sous forme de liste
         code = codes[0] if len(codes) == 1 else list(codes)
+
         return plot_part_femmes(df_lic, sport_code=code, sport_col=sport_col)
 
     _run_widget(update, [sport_widget])
@@ -434,24 +516,43 @@ def widgets_part_femmes(df_lic, sport_col = "code_sport"):
 
 def widgets_heatmap_nbr_licencies(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
     """
-    Widget : choix du sport → affiche la heatmap licences (tranche_age x annee).
+    Crée un widget interactif pour visualiser une heatmap du nombre de licences.
+
+    Paramètres
+    ----------
+    df_lic : pandas.DataFrame
+        Base des licenciés contenant au minimum les colonnes :
+        - 'sport' : nom du sport (str)
+        - sport_col : code du sport (par défaut 'code_sport')
+        - toutes les colonnes nécessaires à `plot_heatmap_nbr_licencies`
+    sport_col : str, optionnel
+        Nom de la colonne contenant le code sport (par défaut "code_sport").
+
+    Retour
+    ------
+    None
+        Affiche un widget + le graphique Plotly associé.
     """
+    # Liste des sports disponibles
     sports = ["all"] + sorted(df_lic["sport"].dropna().unique())
     sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
 
     def update():
+        """Met à jour la heatmap en fonction du sport sélectionné."""
         selected = sport_widget.value
+
+        # Cas : tous les sports
         if selected == "all":
             return plot_heatmap_nbr_licencies(
                 df_lic, sport_code="all", sport_col=sport_col
             )
 
+        # Récupération du ou des codes associés au sport sélectionné
         codes = df_lic.loc[df_lic["sport"] == selected, sport_col].dropna().unique()
-        if len(codes) == 0:
-            print(f"Aucun code sport trouvé pour : {selected}")
-            return None
 
+        # Si plusieurs codes existent, on les passe sous forme de liste
         code = codes[0] if len(codes) == 1 else list(codes)
+
         return plot_heatmap_nbr_licencies(df_lic, sport_code=code, sport_col=sport_col)
 
     _run_widget(update, [sport_widget])

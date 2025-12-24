@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     """
-    Carte : proportion de licenciés (licences / population) par département.
-
+    Affiche une carte de la proportion de licenciés par département pour une année et
+    un sport donnés. La proportion est exprimée en pourcentage.
     Paramètres
     ----------
     data_complet : pd.DataFrame
@@ -27,35 +27,56 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     Carte matplotlib.
     """
     df = data_complet.copy()
+
+    # Filtrage des données selon le sport
     if sport != "all":
         df = df[df["sport"] == sport]
 
+    # Agrégation des licences par département pour l'année choisie
     lic = (
         df[df["annee"] == annee]
         .groupby("code_dep", as_index=False)["licences_annuelles"]
         .sum()
     )
 
-    # Population : on prend l'année si dispo, sinon la plus récente <= annee
+    # Sélection de la population de référence selon l'année
     pop = data_pop.copy()
     pop["annee"] = pop["annee"].astype(int)
     pop = pop[pop["annee"] <= int(annee)]
-    if pop.empty:
-        raise ValueError("data_pop ne contient aucune année <= annee demandée.")
     pop_ref_year = pop["annee"].max()
     pop = pop[pop["annee"] == pop_ref_year][["code_dep", "population"]]
 
-    merged = gdf_dep.merge(lic, on="code_dep", how="left").merge(pop, on="code_dep", how="left")
+    # Jointure géométrie + licences + population
+    merged = gdf_dep.merge(lic, on="code_dep", how="left").merge(
+        pop, on="code_dep", how="left"
+    )
+
+    # Calcul de la proportion de licenciés (en %)
     merged["taux_licencies"] = 100 * merged["licences_annuelles"] / merged["population"]
 
+    # Tracé
     ax = merged.plot(
         column="taux_licencies",
         legend=True,
         figsize=(10, 8),
-        missing_kwds={"color": "lightgrey"},
+        cmap="OrRd",
+        edgecolor="grey",
+        linewidth=0.5,
+        missing_kwds={
+            "color": "lightgrey",
+            "edgecolor": "grey",
+            "hatch": "//",
+            "label": "Données manquantes",
+        },
     )
+
+    # Titre
     ax.set_title(f"Licenciés / population (%) – {sport} – {annee} (pop {pop_ref_year})")
+
+    # Suppression des axes
     ax.axis("off")
+
+    # Affichage de la carte
     plt.show()
 
 
@@ -63,10 +84,6 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
     """
     Affiche une carte du taux de croissance des licenciés par département
     entre deux années pour un sport donné.
-
-    Le taux affiché est calculé comme :
-        (L2 - L1) / L1
-    où L1 = licences_annuelles en annee1 et L2 = licences_annuelles en annee2.
 
     Paramètres
     ----------
@@ -88,9 +105,12 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
     avec un motif hachuré.
     """
     df = data_complet.copy()
+
+    # Filtrage des données selon le sport sélectionné
     if sport != "all":
         df = df[df["sport"] == sport]
 
+    # Agrégation du nombre de licenciés par département pour chaque année
     d1 = (
         df[df["annee"] == annee1]
         .groupby("code_dep", as_index=False)["licences_annuelles"]
@@ -104,16 +124,42 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
         .rename(columns={"licences_annuelles": "v2"})
     )
 
-    merged = gdf_dep.merge(d1, on="code_dep", how="left").merge(d2, on="code_dep", how="left")
+    # Fusion des deux années et avec la géométrie des départements
+    merged = gdf_dep.merge(d1, on="code_dep", how="left").merge(
+        d2, on="code_dep", how="left"
+    )
+
+    # Calcul du taux de croissance
     merged["evolution"] = (merged["v2"] - merged["v1"]) / merged["v1"]
 
+    # Tracé
     ax = merged.plot(
         column="evolution",
         legend=True,
         figsize=(10, 8),
+        edgecolor="grey",
+        linewidth=0.5,
         cmap="coolwarm",
-        missing_kwds={"color": "lightgrey"},
+        missing_kwds={
+            "color": "lightgrey",
+            "edgecolor": "grey",
+            "hatch": "//",
+            "label": "Données manquantes",
+        },
     )
-    ax.set_title(f"Évolution relative des licenciés – {sport} – {annee1} → {annee2}")
+
+    # Titre
+    if sport == "all":
+        titre_sport = "(tous les sports)"
+    else:
+        titre_sport = f"({sport})"
+
+    ax.set_title(
+        f"Taux de croissance {titre_sport} – {annee1}-{annee2}"
+    )
+
+    # Suppression des axes
     ax.axis("off")
+
+    # Affichage de la carte
     plt.show()

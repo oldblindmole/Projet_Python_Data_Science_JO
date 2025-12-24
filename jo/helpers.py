@@ -8,9 +8,7 @@ import pandas as pd
 import numpy as np
 
 
-def filtrer_sport(
-    df: pd.DataFrame, sport: str, sport_col: str = "sport"
-) -> pd.DataFrame:
+def filtrer_sport(df, sport, sport_col = "sport"):
     """
     Filtre un DataFrame par sport.
 
@@ -35,10 +33,9 @@ def agregation_licences_par_annee(df):
     """
     Agrège le nombre de licences par année.
 
-    Colonnes requises
-    -----------------
-    - 'annee'
-    - 'licences_annuelles'
+    Paramètres
+    ----------
+    df : pd.DataFrame
 
     Retour
     ------
@@ -55,8 +52,18 @@ def agregation_licences_par_annee(df):
 
 def pivot_licences_tranche_age(df):
     """
-    Pivot licences : lignes = tranche_age, colonnes = annee.
+    Construit une table pivot des licences sportives par tranche d'âge et par année.
+
+    Paramètres
+    ----------
+    df : pandas.DataFrame
+
+    Retour
+    ------
+    pivot : pandas.DataFrame
     """
+
+    # Création de la table pivot : agrégation des licences par tranche d'âge et année
     pivot = df.pivot_table(
         index="tranche_age",
         columns="annee",
@@ -65,21 +72,24 @@ def pivot_licences_tranche_age(df):
         fill_value=0,
     )
 
+    # Fonction pour extraire la borne inférieure numérique d'une tranche d'âge
     def _lower_bound(x):
         m = re.search(r"\d+", str(x))
         return int(m.group()) if m else 10**9
 
+    # Tri des tranches d'âge selon leur borne inférieure
     pivot = pivot.loc[sorted(pivot.index, key=_lower_bound)]
+
+    # Tri chronologique des années
     pivot = pivot.sort_index(axis=1)
+
     return pivot
 
 
-def part_sous_population(
-    df: pd.DataFrame,
-    condition: pd.Series,
-) -> pd.DataFrame:
+def part_sous_population(df,condition,):
     """
-    Calcule la part d'une sous-population par année.
+    Calcule la part d'une sous-population par année dans le total
+    des licenciés.
 
     Paramètres
     ----------
@@ -92,12 +102,15 @@ def part_sous_population(
     ------
     pd.DataFrame avec colonnes ['annee', 'part']
     """
+
+    # Total des licences par année (population complète)
     total = (
         df.groupby("annee", as_index=False)["licences_annuelles"]
         .sum()
         .rename(columns={"licences_annuelles": "total"})
     )
 
+    # Total des licences par année pour la sous-population
     sub = (
         df[condition]
         .groupby("annee", as_index=False)["licences_annuelles"]
@@ -105,7 +118,10 @@ def part_sous_population(
         .rename(columns={"licences_annuelles": "sub"})
     )
 
+    # Fusion des totaux et gestion des années sans sous-population
     merged = total.merge(sub, on="annee", how="left").fillna({"sub": 0})
+
+    # Calcul de la part
     merged["part"] = np.where(
         merged["total"] > 0, merged["sub"] / merged["total"], np.nan
     )
@@ -247,12 +263,12 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
         - licences_t_plus_2
         - taux_croissance (en %)
     """
-    # Agrégation préalable : licenciés par sport et par année
+    # Agrégation des licenciés par sport et par année
     lic_sport_annee = data_complet.groupby(["sport", "annee"], as_index=False)[
         "licences_annuelles"
     ].sum()
 
-    # Année de référence pour les licenciés (cas particulier JO 2020)
+    # Année de référence pour les licenciés
     annee_lic = 2021 if annee_jo == 2020 else annee_jo
     annee_lic_plus_delta = annee_lic + delta
 
@@ -273,7 +289,7 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
     for sport in sports_medailes:
         df_s = lic_sport_annee[lic_sport_annee["sport"] == sport]
 
-        # On vérifie la présence des deux années nécessaires
+        # Vérification de la présence des deux années nécessaires
         if (df_s["annee"] == annee_lic).any() and (
             df_s["annee"] == annee_lic_plus_delta
         ).any():
@@ -286,7 +302,7 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
                 ].iloc[0]
             )
 
-            # Sécurité : éviter une division par zéro
+            # Prévention contre une division par zéro
             if l_t > 0:
                 rows.append(
                     {
