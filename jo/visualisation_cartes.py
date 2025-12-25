@@ -26,7 +26,8 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     -------
     Carte matplotlib.
     """
-    df = data_complet.copy()
+    df = data_complet.dropna(subset=["code_dep"]).copy()
+
 
     # Filtrage des données selon le sport
     if sport != "all":
@@ -104,7 +105,7 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
     département. Les départements sans données sont indiqués en gris clair
     avec un motif hachuré.
     """
-    df = data_complet.copy()
+    df = data_complet.dropna(subset=["code_dep"]).copy()
 
     # Filtrage des données selon le sport sélectionné
     if sport != "all":

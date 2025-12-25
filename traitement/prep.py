@@ -1,11 +1,8 @@
 """
 Module de récupération, nettoyage et fusion des données.
 
-Ce module est conçu pour être importé et utilisé depuis
-le notebook principal (main.ipynb).
 """
 
-import os
 import unicodedata
 import json
 from pathlib import Path
@@ -17,12 +14,8 @@ import numpy as np
 import pyarrow.parquet as pq
 import pyarrow as pa
 import geopandas as gpd
+from . import URL_JO, DATA_DIR, CACHE_DIR
 
-# --- Paramètres globaux ---
-URL_JO = "https://fr.wikipedia.org/wiki/France_aux_Jeux_olympiques"
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-CACHE_DIR = Path("data/raw_cache")
 
 # --- Fonctions de gestion du cache ---
 def _cache_path_for(url: str, suffix: str) -> Path:
@@ -48,8 +41,6 @@ def get_url_bytes(url: str, *, suffix: str, force_download: bool = False,
     return resp.content
 
 
-
-
 # --- Chargement de la page Wikipedia ---
 def soup_from_url(url, force_download=False):
     """
@@ -64,7 +55,6 @@ def soup_from_url(url, force_download=False):
         verify=True,
     )
     return BeautifulSoup(content, "lxml")
-
 
 
 # --- Scraping des tableaux de médailles ---
@@ -214,7 +204,7 @@ def fusionner_bases(data_or, data_argent, data_bronze):
 
 
 # --- Construction et sauvegarde de la base finale ---
-def gel_base_medailles_finale(filename="data_medailles_jo.csv"):
+def gel_base_medailles_finale(nom_fichier="data_medailles_jo.csv"):
     """
     Construit et sauvegarde la base finale de médailles.
 
@@ -228,19 +218,18 @@ def gel_base_medailles_finale(filename="data_medailles_jo.csv"):
     data_medailles : pandas.DataFrame
         Base finale sauvegardée.
     """
-    data_or = pd.read_csv(os.path.join(DATA_DIR, "data_or_jo.csv"))
-    data_argent = pd.read_csv(os.path.join(DATA_DIR, "data_argent_jo.csv"))
-    data_bronze = pd.read_csv(os.path.join(DATA_DIR, "data_bronze_jo.csv"))
+    data_or = pd.read_csv(DATA_DIR / "data_brut" / "data_or_jo.csv")
+    data_argent = pd.read_csv(DATA_DIR / "data_brut" / "data_argent_jo.csv")
+    data_bronze = pd.read_csv(DATA_DIR / "data_brut" / "data_bronze_jo.csv")
 
     data_medailles = fusionner_bases(data_or, data_argent, data_bronze)
-    output_path = DATA_DIR / "data_clean" / filename 
+    output_path = DATA_DIR / "data_clean" / nom_fichier
     data_medailles.to_csv(output_path, index=False)
 
     return data_medailles
 
 
-# --- Données de Licences ---
-
+# --- Réorganise les colonnes des fichiers licences ---
 def reorganiser_colonnes(liste_fichiers):
     """
     Réorganise les colonnes de tous les fichiers parquet
@@ -267,6 +256,8 @@ def reorganiser_colonnes(liste_fichiers):
 
     return tables
 
+
+# --- Normalisation des caractères en unicode dans la base licences ---
 def normalisation_unicode(table):
     """
     Normalise les caractères en unicode dans une table et renvoie un data frame pandas.
@@ -298,6 +289,7 @@ def normalisation_unicode(table):
     return df
 
 
+# --- Ajout du code sport à la base licences ---
 def code_sport(df):
     """
     Ajoute le code_sport à la base des licenciés.
@@ -349,6 +341,8 @@ def code_sport(df):
 
     return df
 
+
+# --- Création du code département pour la base des licences ---
 def code_dep(df, var):
     """
     Crée un code département avec seulement leur numéro.
@@ -369,6 +363,8 @@ def code_dep(df, var):
 
     return df
 
+
+# --- Renommer les colonnes de la base licences ---
 def renommer_colonnes(df):
     """
     Renomme les colonnes du data frame licenciés.
@@ -402,16 +398,16 @@ def renommer_colonnes(df):
 
     return df
 
-
-def gel_licences(df, nom_fichier="data_licences.parquet"):
+# --- Gel de la base en parquet ---
+def gel_parquet(df, nom_fichier:str):
     """
-    Gel de la base des licenciés avec le code sport en fichier parquet.
+    Gel de la base des licenciés en fichier parquet.
 
     Paramètres
     ----------
     df : pd.DataFrame
         Data frame pandas à écrire en parquet.
-    nom_fichier : str (optionnel)
+    nom_fichier : str 
         Nom du fichier parquet à écrire.
     """
     chemin_sortie = DATA_DIR / "data_clean" / nom_fichier
@@ -419,6 +415,7 @@ def gel_licences(df, nom_fichier="data_licences.parquet"):
     pq.write_table(table, chemin_sortie)
 
 
+# --- Calcul du ratio de non répartis sur une année ---
 def calcul_ratio_nr_annee(df, annee, var):
     """
     Calcule le ratio de licenciés 'Non Répartis' (NR) par année, pour la variable désirée.
@@ -448,6 +445,7 @@ def calcul_ratio_nr_annee(df, annee, var):
     )
 
 
+# --- Calcul du ratio de non répartis global ---
 def calcul_ratio_nr(df, var: str):
     """
     Calcule le ratio de licenciés 'Non Répartis' (NR) dans toute la base, pour la variable désirée.
@@ -476,6 +474,7 @@ def calcul_ratio_nr(df, var: str):
     return df_nr["licences_annuelles"].sum() / df["licences_annuelles"].sum()
 
 
+# --- Création d'un tableau propre des ratios de non répartis ---
 def tableau_ratios_nr(df, var: str):
     """
     Calcule et présente le ratio de licenciés 'Non Répartis' (NR) par année et le ratio global
@@ -514,9 +513,7 @@ def tableau_ratios_nr(df, var: str):
     return df_ratios_nr
 
 
-# --- Données de population départementale ---
-
-
+# --- Extraction des données de population départementale par API ---
 def melodi_extraction(url_api):
     """
     Extrait les données de population au niveau départemental
@@ -577,6 +574,7 @@ def melodi_extraction(url_api):
     return data_pop
 
 
+# --- Création du code département pour la base de population ---
 def code_dep_pop(data_pop, var):
     """
     Extrait le code département à partir de la variable de
@@ -601,6 +599,7 @@ def code_dep_pop(data_pop, var):
     return data_pop
 
 
+# --- Nettoyage de la base de population ---
 def clean_population(df):
     """
     Nettoie la base de données de population :
@@ -637,6 +636,7 @@ def clean_population(df):
     return data_pop_clean
 
 
+# --- Gel de la base de population ---
 def gel_population(df, nom_fichier="population_dept.csv"):
     """
     Gel de la base de population départementale en CSV.
@@ -646,9 +646,26 @@ def gel_population(df, nom_fichier="population_dept.csv"):
     df : pd.DataFrame
         Base de données à geler.
     """
-    output_path = os.path.join(DATA_DIR, nom_fichier)
+    output_path = DATA_DIR / "data_clean" / nom_fichier
     df.to_csv(output_path, index=False)
 
+
+# --- Enregistrement de la base finale --- 
+def gel_final(df, nom_fichier="data_complet.parquet"): 
+    """
+    Gel de la base finale en parquet.
+
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        Base de données à geler.
+    nom_fichier : str (optionnel)
+        Nom du fichier à enregistrer
+    """
+    output_path = DATA_DIR / "data_clean" / nom_fichier
+    df.to_parquet(output_path, index=False)
+
+# --- Chargement des données ---
 def charger_donnees(
     data_complet_path= DATA_DIR / "data_clean" / "data_complet.parquet",
     geojson_path= DATA_DIR / "data_clean" / "departements.geojson",
@@ -675,9 +692,8 @@ def charger_donnees(
     data_pop : pandas.DataFrame
         Population par département et par année.
     """
-    # Base complète : on ne conserve que les lignes avec code_dep
+    # Base complète
     data_complet = pd.read_parquet(data_complet_path)
-    data_complet = data_complet.dropna(subset=["code_dep"]).copy()
     data_complet["code_dep"] = data_complet["code_dep"].astype(str)
 
     # Données géographiques (départements)
