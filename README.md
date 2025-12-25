@@ -9,14 +9,14 @@ _Autrices : Melissa MIGAN; Camille PEYTHIEUX-TALDIR, Romane PLUQUET_
 
 ## Données
 Nous exploitons des données de trois types :  
-    - nombre et couleur des médailles gagnées aux JO entre 2016 et 2024,
-    - effectifs de licenciés sportifs en France entre 2016 et 2024,
-    - population départementale (municipale) entre 2016 et 2023,
+- nombre et couleur des médailles gagnées aux JO entre 2016 et 2024,
+- effectifs de licenciés sportifs en France entre 2016 et 2024,
+- population départementale (municipale) entre 2016 et 2023,
 
-Ces données sont obtenues de trois msources différentes, respectivement :
-    - webscraping de la page wikipédia "France aux Jeux Olympiques",
-    - fichiers CSV fournis par l'Injep (Institut national de la jeunesse et de l'éducation populaire), importés au format parquet car trop lourds pour un repo git, 
-    - requête vers l'API Melodi de l'INSEE. 
+Ces données sont obtenues par trois msources différentes, respectivement :
+- webscraping de la page wikipédia "France aux Jeux Olympiques",
+- fichiers CSV fournis par l'Injep (Institut national de la jeunesse et de l'éducation populaire), importés au format parquet car trop lourds pour un repo git, 
+- requête via l'API Melodi de l'INSEE. 
 
 La base de données de l'INJEP a l'avantage de présenter une classfication fine des licenciés selon leurs caractéristiques socio-démographiques (âge, sexe, département d'exercice).
 
