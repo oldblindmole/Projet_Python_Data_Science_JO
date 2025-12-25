@@ -17,47 +17,60 @@ from .helpers import (
 )
 
 
-def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
+def graphique_licences_et_medailles(df, sport = "all"):
     """
-    Graphique interactif combiné :
-    - x : années (celles présentes dans les données de licences)
-    - y1 : nombre de licenciés (courbe)
-    - y2 : médailles (barres empilées or/argent/bronze)
-      affichées uniquement aux années JO (2016, 2021, 2024) via un mapping
-      depuis les colonnes médailles (2016, 2020, 2024).
+    Construit un graphique Plotly combinant l'évolution des licenciés et des médailles.
 
     Paramètres
     ----------
     df : pandas.DataFrame
-        Base contenant au minimum : 'annee', 'sport', 'licences_annuelles'
-        + colonnes médailles : '2016_or', '2020_or', '2024_or', etc.
-    sport : str
-        "all" ou un libellé exact de sport.
+        Colonnes requises :'annee', 'sport', 'licences_annuelles',
+        '{annee}_or', '{annee}_argent', '{annee}_bronze' pour annee ∈ {2016, 2020, 2024}
+    sport : str, optionnel (par défaut = "all")
+
+    Retour
+    ------
+    plotly.graph_objects.Figure
     """
+    # Filtrage des données selon le sport puis agrégation annuelle des licenciés
     d = filtrer_sport(df, sport)
     lic = agregation_licences_par_annee(d)
 
+    # Années affichées (celles disponibles dans la série de licenciés)
     years = lic["annee"].tolist()
+
     medal_types = ("or", "argent", "bronze")
     medal_colors = {"or": "#F2C300", "argent": "#B0B0B0", "bronze": "#8C6239"}
 
+    # Initialisation : 0 médailles sur toutes les années
     medals_by_year = {y: {m: 0 for m in medal_types} for y in years}
 
+    # Récupération des médailles uniquement si un sport spécifique est sélectionné
     if sport != "all":
+        # Colonnes médailles potentiellement disponibles
         cols = ["sport"] + [f"{y}_{m}" for y in [2016, 2020, 2024] for m in medal_types]
+
+        # On se ramène à une ligne par sport pour lire les colonnes médailles
         cols = [c for c in cols if c in df.columns]
         row = df[cols].drop_duplicates("sport")
         row = row[row["sport"] == sport]
+
         if not row.empty:
             row = row.iloc[0]
+
+            # Mapping édition JO -> année d'affichage côté licences
             mapping = {2016: 2016, 2020: 2021, 2024: 2024}
+
             for y, y_disp in mapping.items():
+                # On ne remplit que si l'année d'affichage existe dans l'axe des années
                 if y_disp in medals_by_year:
                     for m in medal_types:
                         medals_by_year[y_disp][m] = int(row.get(f"{y}_{m}", 0) or 0)
 
+    # Figure à deux axes y
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+    # Barres empilées pour les médailles
     for m in medal_types:
         fig.add_trace(
             go.Bar(
@@ -70,6 +83,7 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
             secondary_y=True,
         )
 
+    # Courbe des licenciés
     fig.add_trace(
         go.Scatter(
             x=years,
@@ -80,12 +94,13 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
         secondary_y=False,
     )
 
+    # Mise en forme
     fig.update_layout(
         title=f"Évolution des licenciés et médailles – {sport}",
         barmode="stack",
         hovermode="x unified",
         width=1100,
-        height=600,
+        height=600
     )
     fig.update_xaxes(title="Année")
     fig.update_yaxes(title="Licenciés", secondary_y=False)
@@ -135,6 +150,7 @@ def licences_par_annee(df, sport_code="all", sport_col="code_sport"):
         y="licences_annuelles",
         markers=True,
         title=f"Nombre de licences par année — {titre_sport}",
+        color_discrete_sequence=["darkorchid"],
         labels={
             "annee": "Année",
             "licences_annuelles": "Nombre de licenciés"
@@ -154,12 +170,11 @@ def evolution_licencies_age(df, age="all"):
         Base complète des licenciés, contenant au moins :
         `annee`, `sport`, `licences_annuelles`, `code_sport`, `age`.
     age : str, optionnel
-        Âge exact à filtrer (ex: "12"). Utiliser "all" pour tous les âges.
+        Âge exact à filtrer. Utiliser "all" pour tous les âges.
 
     Retour
     ------
-    Graphique interactif Plotly représentant le nombre de licenciés par sport
-    et par année pour l'âge sélectionné.
+    plotly.graph_objects.Figure
     """
     # Suppression des entrées "DIV" (divers) pour se concentrer sur les sports identifiés
     df_clean = df[df["code_sport"] != "DIV"]
@@ -220,12 +235,10 @@ def evolution_licences_tranches_fines_age(df, tranche="all"):
         `code_sport`, `tranche_age`.
     tranche : str, optionnel
         Tranche d'âge fine à filtrer (valeur de `tranche_age`).
-        Utiliser "all" pour toutes les tranches.
 
     Retour
     ------
-    Graphique interactif Plotly représentant le nombre de licenciés par sport
-    et par année pour la tranche d'âge sélectionnée.
+    plotly.graph_objects.Figure
     """
     # Suppression des entrées "DIV" (divers) pour se concentrer sur les sports identifiés
     df_clean = df[df["code_sport"] != "DIV"]
@@ -289,12 +302,10 @@ def evolution_licences_tranches_grandes_age(df, tranche="all"):
         `code_sport`, `grande_tranche_age`.
     tranche : str, optionnel
         Grande tranche d'âge à filtrer (valeur de `grande_tranche_age`).
-        Utiliser "all" pour toutes les tranches.
 
     Retour
     ------
-    Graphique interactif Plotly représentant le nombre de licenciés par sport
-    et par année pour la tranche d'âge sélectionnée.
+    plotly.graph_objects.Figure
     """
     # Suppression des entrées "DIV" (divers) pour se concentrer sur les sports identifiés
     df_clean = df[df["code_sport"] != "DIV"]
@@ -350,9 +361,6 @@ def repartition_grandes_tranches_age_par_sport(df, annee="all"):
     """
     Affiche la répartition (en %) des licenciés par sport et grande tranche d'âge.
 
-    Pour chaque sport, on calcule la proportion de licenciés dans chaque
-    grande tranche d'âge (stacked bar chart).
-
     Paramètres
     ----------
     df : pandas.DataFrame
@@ -363,8 +371,7 @@ def repartition_grandes_tranches_age_par_sport(df, annee="all"):
 
     Retour
     ------
-    None
-        Affiche le graphique Plotly.
+    plotly.graph_objects.Figure
     """
     # Filtrage selon l'année
     df_clean = df if annee == "all" else df[df["annee"] == annee]
@@ -441,8 +448,7 @@ def repartition_fines_tranches_age_par_sport(df, annee="all"):
 
     Retour
     ------
-    Graphique interactif Plotly représentant la répartition proportionnelle des licenciés
-    par grande tranche d'âge pour chaque sport.
+    plotly.graph_objects.Figure
     """
     # Filtrage selon l'année
     df_clean = df if annee == "all" else df[df["annee"] == annee]
@@ -531,7 +537,6 @@ def graphique_licences_par_sexe(df_lic, sport_code="all", sport_col="code_sport"
     Retour
     ------
     plotly.graph_objects.Figure
-        Courbes (ou points) par sexe, en fonction de l'année.
     """
     df = df_lic.copy()
 
@@ -605,7 +610,6 @@ def graphique_part_jeunes(df_lic, age_max=15, sport_code="all", sport_col="code_
     Retour
     ------
     plotly.graph_objects.Figure
-        Courbe de la part des jeunes (%) par année.
     """
     df = df_lic.copy()
 
@@ -652,6 +656,7 @@ def graphique_part_jeunes(df_lic, age_max=15, sport_code="all", sport_col="code_
         merged.sort_values("annee"),
         x="annee",
         y="part_jeunes",
+        color_discrete_sequence=["darkorchid"],
         markers=True,
         title=f"Part des jeunes (< {age_max} ans) – {titre_sport}",
         labels={"annee": "Année", "part_jeunes": "Part des jeunes"},
@@ -680,7 +685,6 @@ def graphique_part_femmes(df_lic, sport_code="all", sport_col="code_sport"):
     Retour
     ------
     plotly.graph_objects.Figure
-        Courbe de la part des femmes (%) par année.
     """
     df = df_lic.copy()
 
@@ -730,6 +734,7 @@ def graphique_part_femmes(df_lic, sport_code="all", sport_col="code_sport"):
         x="annee",
         y="part_femmes",
         markers=True,
+        color_discrete_sequence=["darkorchid"],
         title=f"Part des femmes – {titre_sport}",
         labels={"annee": "Année", "part_femmes": "Part des femmes"},
     )
@@ -757,7 +762,6 @@ def heatmap_nbr_licencies(df_lic, sport_code="all", sport_col="code_sport"):
     Retour
     ------
     plotly.graph_objects.Figure
-        Heatmap interactive (années en x, tranches d'âge en y).
     """
     df = df_lic.copy()
 
@@ -794,7 +798,7 @@ def heatmap_nbr_licencies(df_lic, sport_code="all", sport_col="code_sport"):
         aspect="auto",
         title=f"Heatmap licences (tranche d'âge × année) – {titre_sport}",
         labels={"x": "Année", "y": "Tranche d'âge", "color": "Licences"},
-        color_continuous_scale="Blues"
+        color_continuous_scale="matter"
     )
 
     return fig
@@ -812,8 +816,6 @@ def medailles_par_annee(df):
     Retour
     ------
     plotly.graph_objects.Figure
-        Figure Plotly (courbes) présentant, pour chaque année, le nombre de
-        médailles Or/Argent/Bronze ainsi que le total.
     """
 
     # Colonnes correspondant aux médailles par année et par couleur
@@ -944,11 +946,11 @@ def camembert_medailles(df, annee_jo="all"):
                 raise ValueError(f"Colonne manquante : {col}")
             medal_cols.append(col)
 
-    # 1) Déduplication par sport + exclusion DIV
+    # Déduplication par sport + exclusion DIV
     tmp = df[df["code_sport"] != "DIV"][["code_sport"] + medal_cols].copy()
     by_sport = tmp.groupby("code_sport", as_index=False).max(numeric_only=True)
 
-    # 2) Agrégation France
+    # Agrégation
     or_total = sum(by_sport[f"{y}_or"].sum() for y in annees)
     argent_total = sum(by_sport[f"{y}_argent"].sum() for y in annees)
     bronze_total = sum(by_sport[f"{y}_bronze"].sum() for y in annees)

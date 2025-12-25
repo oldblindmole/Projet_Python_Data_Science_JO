@@ -4,12 +4,14 @@ Ces fonctions affichent avec plt.show().
 """
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 
 def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     """
     Affiche une carte de la proportion de licenciés par département pour une année et
     un sport donnés. La proportion est exprimée en pourcentage.
+
     Paramètres
     ----------
     data_complet : pd.DataFrame
@@ -54,22 +56,32 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     # Calcul de la proportion de licenciés (en %)
     merged["taux_licencies"] = 100 * merged["licences_annuelles"] / merged["population"]
 
+    MATTER_COLORS = [
+        "#fff2c6",
+        "#f6c48b",
+        "#ee9b6a",
+        "#d65a5a",
+        "#8b2d5c",
+        "#4b1d4a",
+    ]
+
+    _CMAP_LICENCIES = LinearSegmentedColormap.from_list(
+        "matter_manual", MATTER_COLORS, N=256
+    )
     # Titre
     titre_sport = "tous les sports" if sport == "all" else sport
-
 
     # Tracé
     ax = merged.plot(
         column="taux_licencies",
         legend=True,
         figsize=(10, 8),
-        cmap="OrRd",
+        cmap=_CMAP_LICENCIES,
         edgecolor="grey",
         linewidth=0.5,
         missing_kwds={
             "color": "lightgrey",
             "edgecolor": "grey",
-            "hatch": "//",
             "label": "Données manquantes",
         },
     )
@@ -149,7 +161,6 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
         missing_kwds={
             "color": "lightgrey",
             "edgecolor": "grey",
-            "hatch": "//",
             "label": "Données manquantes",
         },
     )
