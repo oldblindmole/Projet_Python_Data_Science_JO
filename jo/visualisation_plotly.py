@@ -545,6 +545,22 @@ def graphique_licences_par_sexe(df_lic, sport_code="all", sport_col="code_sport"
         .sort_values(["annee", "sexe"])
     )
 
+    # Harmonisation des libellés pour la légende
+    sexe_map = {
+        "F": "Femmes",
+        "H": "Hommes",
+        "NR - Non réparti": "Non réparti",
+    }
+
+    agg["sexe_label"] = agg["sexe"].map(sexe_map).fillna(agg["sexe"])
+
+    # Palette de couleurs
+    color_map = {
+        "Femmes": "darkorchid",
+        "Hommes": "orange",
+        "Non réparti": "black",
+    }
+
     # Titre
     titre = "Tous sports" if sport_code == "all" else sport_code
 
@@ -553,13 +569,14 @@ def graphique_licences_par_sexe(df_lic, sport_code="all", sport_col="code_sport"
         agg,
         x="annee",
         y="licences_annuelles",
-        color="sexe",
+        color="sexe_label",
         markers=True,
         title=f"Licences annuelles par sexe – {titre}",
+        color_discrete_map=color_map,
         labels={
             "annee": "Année",
-            "licences_annuelles": "Licences annuelles",
-            "sexe": "Sexe",
+            "licences_annuelles": "Nombre de licenciés",
+            "sexe_label": "Sexe"
         },
     )
 
@@ -871,7 +888,7 @@ def medailles_par_annee(df):
         color="type_medaille",
         markers=True,
         color_discrete_map=color_map,
-        title="Médailles olympiques – France",
+        title="Evolution du nombre de médailles olympiques remportées",
     )
 
     fig.update_layout(
