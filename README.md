@@ -1,4 +1,4 @@
-# Projet Python pour la Data Science : Influence des médailles remportées par la France aux Jeux Olympiques sur le nombre le licenciés sportifs en France.
+# Projet Python pour la Data Science
 
 _Autrices : Melissa MIGAN; Camille PEYTHIEUX-TALDIR, Romane PLUQUET_
 
@@ -24,19 +24,17 @@ La base de données de l'INJEP a l'avantage de présenter une classfication fine
 #TODO raconter quels modèles on a utilisé tout ça
 
 ## Reproduction du projet
-
-Installation
-
+### Installation
 Cloner le projet.
-Installer les dépendances : pip install -r requirements.txt
 
-#TODO décrit comment bien lancer
-* pip install -r requirements.txt
-* ouvrir main.ipynb
-* Restart & Run All (préciser qu’il faut avoir les fichiers de données / où ils sont)
+Installer les dépendances Python à l’aide de la commande :
+`pip install -r requirements.txt`
+
+### Lancement
+Ouvrir le notebook `main.ipynb`, qui constitue le rapport analytique principal du projet.
 
 ## Structure du repo
 - dossier `data` : dossier contenant les données brutes et receptionnant les données nettoyées, 
 - dossier `jo`: package permettant la visualisation interactive des données,
 - dossier `traitement`: package permettant la récupération et le nettoyage des données, 
-- fichier main.ipynb : rapport analytique, 
+- fichier `main.ipynb` : notebook principal servant de rapport analytique et de support de restitution.
