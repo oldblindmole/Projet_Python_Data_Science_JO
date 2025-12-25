@@ -55,10 +55,8 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     merged["taux_licencies"] = 100 * merged["licences_annuelles"] / merged["population"]
 
     # Titre
-    if sport == "all":
-        titre_sport = "Tous sports"
-    else:
-        titre_sport = df.loc[df[sport] == sport, "sport"].iloc[0]
+    titre_sport = "tous les sports" if sport == "all" else sport
+
 
     # Tracé
     ax = merged.plot(
