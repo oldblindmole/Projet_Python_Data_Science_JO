@@ -504,7 +504,7 @@ def repartition_fines_tranches_age_par_sport(df, annee="all"):
     return fig
 
 
-def plot_licences_par_sexe(df_lic, sport_code="all", sport_col="code_sport"):
+def graphique_licences_par_sexe(df_lic, sport_code="all", sport_col="code_sport"):
     """
     Construit une figure Plotly des licences annuelles par sexe.
 
@@ -559,7 +559,7 @@ def plot_licences_par_sexe(df_lic, sport_code="all", sport_col="code_sport"):
     return fig
 
 
-def plot_part_jeunes(df_lic, age_max=15, sport_code="all", sport_col="code_sport"):
+def graphique_part_jeunes(df_lic, age_max=15, sport_code="all", sport_col="code_sport"):
     """
     Construit une figure Plotly de la part de jeunes (< age_max) parmi les licenciés, par année.
 
@@ -633,7 +633,7 @@ def plot_part_jeunes(df_lic, age_max=15, sport_code="all", sport_col="code_sport
     return fig
 
 
-def plot_part_femmes(df_lic, sport_code="all", sport_col="code_sport"):
+def graphique_part_femmes(df_lic, sport_code="all", sport_col="code_sport"):
     """
     Construit une figure Plotly de la part des femmes parmi les licenciés, par année.
 
@@ -706,7 +706,7 @@ def plot_part_femmes(df_lic, sport_code="all", sport_col="code_sport"):
     return fig
 
 
-def plot_heatmap_nbr_licencies(df_lic, sport_code="all", sport_col="code_sport"):
+def heatmap_nbr_licencies(df_lic, sport_code="all", sport_col="code_sport"):
     """
     Construit une heatmap Plotly du nombre de licences par tranche d'âge et par année.
 
@@ -756,6 +756,7 @@ def plot_heatmap_nbr_licencies(df_lic, sport_code="all", sport_col="code_sport")
         aspect="auto",
         title=f"Heatmap licences (tranche d'âge × année) – {titre}",
         labels={"x": "Année", "y": "Tranche d'âge", "color": "Licences"},
+        color_continuous_scale="Blues"
     )
 
     return fig
@@ -763,11 +764,21 @@ def plot_heatmap_nbr_licencies(df_lic, sport_code="all", sport_col="code_sport")
 
 def medailles_par_annee(df):
     """
-    Médailles olympiques France par année (2016 / 2020 / 2024),
-    et total.
+    Construit une figure Plotly représentant le nombre de médailles olympiques
+    remportées par la France par année de Jeux (2016, 2020, 2024) et par couleur.
+
+    Paramètres
+    ----------
+    df : pandas.DataFrame
+
+    Retour
+    ------
+    plotly.graph_objects.Figure
+        Figure Plotly (courbes) présentant, pour chaque année, le nombre de
+        médailles Or/Argent/Bronze ainsi que le total.
     """
 
-    # Colonnes utiles
+    # Colonnes correspondant aux médailles par année et par couleur
     medal_cols = [
         "2016_or", "2016_argent", "2016_bronze",
         "2020_or", "2020_argent", "2020_bronze",
@@ -779,13 +790,14 @@ def medailles_par_annee(df):
         "total_medailles_2024",
     ]
 
+    # Extraction des colonnes nécessaires
     cols = ["code_sport"] + medal_cols + total_cols
     tmp = df[cols].copy()
 
     # Exclusion des DIV
     tmp = tmp[tmp["code_sport"] != "DIV"]
 
-    # Déduplication par sport
+    # Déduplication : une ligne par sport
     by_sport = tmp.groupby("code_sport", as_index=False).max(numeric_only=True)
 
     # Agrégation
@@ -795,6 +807,7 @@ def medailles_par_annee(df):
         argent = by_sport[f"{y}_argent"].sum()
         bronze = by_sport[f"{y}_bronze"].sum()
 
+        # Utilisation du total pré-calculé si disponible
         total_col = f"total_medailles_{y}"
         total = (
             by_sport[total_col].sum()
@@ -814,7 +827,7 @@ def medailles_par_annee(df):
 
     out = pd.DataFrame(rows)
 
-    # Format long pour Plotly
+    # Passage au format long pour Plotly
     long_df = out.melt(
         id_vars="annee",
         value_vars=["Or", "Argent", "Bronze", "Total"],
@@ -822,6 +835,7 @@ def medailles_par_annee(df):
         value_name="nb",
     )
 
+    # Palette de couleurs
     color_map = {
         "Or": "#F2C300",
         "Argent": "#B0B0B0",
@@ -829,6 +843,7 @@ def medailles_par_annee(df):
         "Total": "black",
     }
 
+    # Tracé
     fig = px.line(
         long_df,
         x="annee",
@@ -922,7 +937,7 @@ def camembert_medailles(df, annee_jo="all"):
         color="type_medaille",
         color_discrete_map=color_map,
         hole=0.35,
-        title=f"Répartition des médailles – France ({titre_annee})<br>Total = {int(total)}",
+        title=f"Répartition des médailles ({titre_annee})<br>Total = {int(total)}",
     )
 
     fig.update_traces(textinfo="percent+value", textposition="inside")

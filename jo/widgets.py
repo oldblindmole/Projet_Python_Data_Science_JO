@@ -15,10 +15,10 @@ from .visualisation_plotly import (
     evolution_licences_tranches_grandes_age,
     repartition_grandes_tranches_age_par_sport,
     repartition_fines_tranches_age_par_sport,
-    plot_licences_par_sexe,
-    plot_part_femmes,
-    plot_part_jeunes,
-    plot_heatmap_nbr_licencies,
+    graphique_licences_par_sexe,
+    graphique_part_femmes,
+    graphique_part_jeunes,
+    heatmap_nbr_licencies,
     camembert_medailles
 )
 from .visualisation_cartes import (
@@ -73,7 +73,7 @@ def widget_graphique_licences_et_medailles(df):
 def widget_licences_par_sport(df):
     """
     Crée un widget interactif (Dropdown) permettant de sélectionner un sport
-    et d'afficher le graphique correspondant via la fonction `plot_licences_par_annee`.
+    et d'afficher le graphique correspondant via la fonction `graphique_licences_par_annee`.
 
     Paramètres
     ----------
@@ -406,7 +406,7 @@ def widgets_licences_par_sexe(df_lic, sport_col="code_sport"):
 
         # Cas : tous les sports
         if selected == "all":
-            return plot_licences_par_sexe(df_lic, sport_code="all", sport_col=sport_col)
+            return graphique_licences_par_sexe(df_lic, sport_code="all", sport_col=sport_col)
 
         # Récupération du ou des codes associés au sport sélectionné
         codes = df_lic.loc[df_lic["sport"] == selected, sport_col].dropna().unique()
@@ -414,12 +414,12 @@ def widgets_licences_par_sexe(df_lic, sport_col="code_sport"):
         # Si plusieurs codes existent, on les passe sous forme de liste
         code = codes[0] if len(codes) == 1 else list(codes)
 
-        return plot_licences_par_sexe(df_lic, sport_code=code, sport_col=sport_col)
+        return graphique_licences_par_sexe(df_lic, sport_code=code, sport_col=sport_col)
 
     _run_widget(update, [sport_widget])
 
 
-def widgets_part_jeunes(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
+def widgets_part_jeunes(df_lic, sport_col = "code_sport"):
     """
     Crée un widget interactif pour visualiser la part de jeunes licenciés.
 
@@ -429,7 +429,7 @@ def widgets_part_jeunes(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
         Base des licenciés contenant au minimum les colonnes :
         - 'sport' : nom du sport (str)
         - sport_col : code du sport (par défaut 'code_sport')
-        - toutes les colonnes nécessaires à `plot_part_jeunes`
+        - toutes les colonnes nécessaires à `graphique_part_jeunes`
     sport_col : str, optionnel
         Nom de la colonne contenant le code sport (par défaut "code_sport").
 
@@ -455,7 +455,7 @@ def widgets_part_jeunes(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
 
         # Cas : tous les sports
         if selected == "all":
-            return plot_part_jeunes(
+            return graphique_part_jeunes(
                 df_lic, age_max=age_max, sport_code="all", sport_col=sport_col
             )
 
@@ -465,7 +465,7 @@ def widgets_part_jeunes(df_lic: pd.DataFrame, sport_col: str = "code_sport"):
         # Si plusieurs codes existent, on les passe sous forme de liste
         code = codes[0] if len(codes) == 1 else list(codes)
 
-        return plot_part_jeunes(
+        return graphique_part_jeunes(
             df_lic, age_max=age_max, sport_code=code, sport_col=sport_col
         )
 
@@ -482,7 +482,7 @@ def widgets_part_femmes(df_lic, sport_col="code_sport"):
         Base des licenciés contenant au minimum les colonnes :
         - 'sport' : nom du sport (str)
         - sport_col : code du sport (par défaut 'code_sport')
-        - toutes les colonnes nécessaires à `plot_part_femmes`
+        - toutes les colonnes nécessaires à `graphique_part_femmes`
     sport_col : str, optionnel
         Nom de la colonne contenant le code sport (par défaut "code_sport").
 
@@ -502,7 +502,7 @@ def widgets_part_femmes(df_lic, sport_col="code_sport"):
 
         # Cas : tous les sports
         if selected == "all":
-            return plot_part_femmes(df_lic, sport_code="all", sport_col=sport_col)
+            return graphique_part_femmes(df_lic, sport_code="all", sport_col=sport_col)
 
         # Récupération du ou des codes associés au sport sélectionné
         codes = df_lic.loc[df_lic["sport"] == selected, sport_col].dropna().unique()
@@ -510,7 +510,7 @@ def widgets_part_femmes(df_lic, sport_col="code_sport"):
         # Si plusieurs codes existent, on les passe sous forme de liste
         code = codes[0] if len(codes) == 1 else list(codes)
 
-        return plot_part_femmes(df_lic, sport_code=code, sport_col=sport_col)
+        return graphique_part_femmes(df_lic, sport_code=code, sport_col=sport_col)
 
     _run_widget(update, [sport_widget])
 
@@ -525,7 +525,7 @@ def widgets_heatmap_nbr_licencies(df_lic: pd.DataFrame, sport_col: str = "code_s
         Base des licenciés contenant au minimum les colonnes :
         - 'sport' : nom du sport (str)
         - sport_col : code du sport (par défaut 'code_sport')
-        - toutes les colonnes nécessaires à `plot_heatmap_nbr_licencies`
+        - toutes les colonnes nécessaires à `heatmap_nbr_licencies`
     sport_col : str, optionnel
         Nom de la colonne contenant le code sport (par défaut "code_sport").
 
@@ -544,7 +544,7 @@ def widgets_heatmap_nbr_licencies(df_lic: pd.DataFrame, sport_col: str = "code_s
 
         # Cas : tous les sports
         if selected == "all":
-            return plot_heatmap_nbr_licencies(
+            return heatmap_nbr_licencies(
                 df_lic, sport_code="all", sport_col=sport_col
             )
 
@@ -554,7 +554,7 @@ def widgets_heatmap_nbr_licencies(df_lic: pd.DataFrame, sport_col: str = "code_s
         # Si plusieurs codes existent, on les passe sous forme de liste
         code = codes[0] if len(codes) == 1 else list(codes)
 
-        return plot_heatmap_nbr_licencies(df_lic, sport_code=code, sport_col=sport_col)
+        return heatmap_nbr_licencies(df_lic, sport_code=code, sport_col=sport_col)
 
     _run_widget(update, [sport_widget])
 
