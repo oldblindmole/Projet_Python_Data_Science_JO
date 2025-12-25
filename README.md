@@ -13,8 +13,8 @@ Nous exploitons des données de trois types :
 - effectifs de licenciés sportifs en France entre 2016 et 2024,
 - population départementale (municipale) entre 2016 et 2023,
 
-Ces données sont obtenues par trois msources différentes, respectivement :
-- webscraping de la page wikipédia "France aux Jeux Olympiques",
+Ces données sont obtenues par trois sources différentes, respectivement :
+- webscraping de la page Wikipédia "France aux Jeux Olympiques",
 - fichiers CSV fournis par l'Injep (Institut national de la jeunesse et de l'éducation populaire), importés au format parquet car trop lourds pour un repo git, 
 - requête via l'API Melodi de l'INSEE. 
 
@@ -24,6 +24,12 @@ La base de données de l'INJEP a l'avantage de présenter une classfication fine
 #TODO raconter quels modèles on a utilisé tout ça
 
 ## Reproduction du projet
+
+Installation
+
+Cloner le projet.
+Installer les dépendances : pip install -r requirements.txt
+
 #TODO décrit comment bien lancer
 * pip install -r requirements.txt
 * ouvrir main.ipynb

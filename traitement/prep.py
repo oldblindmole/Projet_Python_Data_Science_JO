@@ -140,6 +140,7 @@ def nettoyer_base(df):
     df = df.dropna(how="all")
     df = df.drop(df.tail(3).index)
     df = df[["Sport", "2024", "2020", "2016"]]
+    df["Sport"].str.replace("Rugby à 7", "Rugby", regex=False)
     return df
 
 
