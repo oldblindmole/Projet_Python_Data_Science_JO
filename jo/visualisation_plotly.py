@@ -58,6 +58,18 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+    for m in medal_types:
+        fig.add_trace(
+            go.Bar(
+                x=years,
+                y=[medals_by_year[y][m] for y in years],
+                name=m.capitalize(),
+                marker_color=medal_colors[m],
+                width=0.5
+            ),
+            secondary_y=True,
+        )
+
     fig.add_trace(
         go.Scatter(
             x=years,
@@ -67,17 +79,6 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
         ),
         secondary_y=False,
     )
-
-    for m in medal_types:
-        fig.add_trace(
-            go.Bar(
-                x=years,
-                y=[medals_by_year[y][m] for y in years],
-                name=m.capitalize(),
-                marker_color=medal_colors[m],
-            ),
-            secondary_y=True,
-        )
 
     fig.update_layout(
         title=f"Évolution des licenciés et médailles – {sport}",
