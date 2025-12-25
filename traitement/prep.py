@@ -692,9 +692,8 @@ def charger_donnees(
     data_pop : pandas.DataFrame
         Population par département et par année.
     """
-    # Base complète : on ne conserve que les lignes avec code_dep (cartographiables)
+    # Base complète
     data_complet = pd.read_parquet(data_complet_path)
-    data_complet = data_complet.dropna(subset=["code_dep"]).copy()
     data_complet["code_dep"] = data_complet["code_dep"].astype(str)
 
     # Données géographiques (départements)
