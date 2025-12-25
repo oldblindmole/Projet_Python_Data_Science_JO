@@ -19,6 +19,7 @@ from .visualisation_plotly import (
     plot_part_femmes,
     plot_part_jeunes,
     plot_heatmap_nbr_licencies,
+    camembert_medailles
 )
 from .visualisation_cartes import (
     carte_licencies,
@@ -556,3 +557,37 @@ def widgets_heatmap_nbr_licencies(df_lic: pd.DataFrame, sport_col: str = "code_s
         return plot_heatmap_nbr_licencies(df_lic, sport_code=code, sport_col=sport_col)
 
     _run_widget(update, [sport_widget])
+
+
+def widgets_camembert_medailles(data_complet):
+    """
+    Widget interactif pour la répartition des médailles olympiques par an.
+
+    Paramètres
+    ----------
+    data_complet : pandas.DataFrame
+        Base complète contenant `annee` et `tranche_age`.
+
+    Retour
+    ------
+    None
+        Affiche un widget + le graphique Plotly associé.
+    """
+    # Récupération des années uniques et triées
+    annees = [2016, 2020, 2024]
+
+    # Création du widget Dropdown
+    annees_widget = widgets.Dropdown(
+        options=["all"] + list(annees), description="Année :", value="all"
+    )
+
+    # Fonction de mise à jour du graphique
+    def update(change=None):  # pylint: disable=W0613
+        """
+        Met à jour le graphique interactif lorsque l'utilisateur change l'année sélectionnée.
+        """
+        return camembert_medailles(
+            data_complet, annee_jo=annees_widget.value
+        )
+
+    _run_widget(update, [annees_widget])

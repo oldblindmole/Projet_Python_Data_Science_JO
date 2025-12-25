@@ -93,7 +93,7 @@ def graphique_licences_et_medailles(df: pd.DataFrame, sport: str = "all"):
     return fig
 
 
-def licences_par_annee(df: pd.DataFrame, sport_code="all", sport_col="code_sport"):
+def licences_par_annee(df, sport_code="all", sport_col="code_sport"):
     """
     Construit un graphique Plotly du nombre de licences annuelles (agrégé).
 
@@ -757,5 +757,175 @@ def plot_heatmap_nbr_licencies(df_lic, sport_code="all", sport_col="code_sport")
         title=f"Heatmap licences (tranche d'âge × année) – {titre}",
         labels={"x": "Année", "y": "Tranche d'âge", "color": "Licences"},
     )
+
+    return fig
+
+
+def medailles_par_annee(df):
+    """
+    Médailles olympiques France par année (2016 / 2020 / 2024),
+    et total.
+    """
+
+    # Colonnes utiles
+    medal_cols = [
+        "2016_or", "2016_argent", "2016_bronze",
+        "2020_or", "2020_argent", "2020_bronze",
+        "2024_or", "2024_argent", "2024_bronze",
+    ]
+    total_cols = [
+        "total_medailles_2016",
+        "total_medailles_2020",
+        "total_medailles_2024",
+    ]
+
+    cols = ["code_sport"] + medal_cols + total_cols
+    tmp = df[cols].copy()
+
+    # Exclusion des DIV
+    tmp = tmp[tmp["code_sport"] != "DIV"]
+
+    # Déduplication par sport
+    by_sport = tmp.groupby("code_sport", as_index=False).max(numeric_only=True)
+
+    # Agrégation
+    rows = []
+    for y in [2016, 2020, 2024]:
+        or_ = by_sport[f"{y}_or"].sum()
+        argent = by_sport[f"{y}_argent"].sum()
+        bronze = by_sport[f"{y}_bronze"].sum()
+
+        total_col = f"total_medailles_{y}"
+        total = (
+            by_sport[total_col].sum()
+            if total_col in by_sport.columns
+            else or_ + argent + bronze
+        )
+
+        rows.append(
+            {
+                "annee": y,
+                "Or": or_,
+                "Argent": argent,
+                "Bronze": bronze,
+                "Total": total,
+            }
+        )
+
+    out = pd.DataFrame(rows)
+
+    # Format long pour Plotly
+    long_df = out.melt(
+        id_vars="annee",
+        value_vars=["Or", "Argent", "Bronze", "Total"],
+        var_name="type_medaille",
+        value_name="nb",
+    )
+
+    color_map = {
+        "Or": "#F2C300",
+        "Argent": "#B0B0B0",
+        "Bronze": "#8C6239",
+        "Total": "black",
+    }
+
+    fig = px.line(
+        long_df,
+        x="annee",
+        y="nb",
+        color="type_medaille",
+        markers=True,
+        color_discrete_map=color_map,
+        title="Médailles olympiques – France",
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        xaxis_title="Année des JO",
+        yaxis_title="Nombre de médailles",
+        legend_title_text="Type de médaille",
+    )
+
+    return fig
+
+
+def camembert_medailles(df, annee_jo="all"):
+    """
+    Camembert Plotly de la répartition Or / Argent / Bronze pour la France.
+
+    Paramètres
+    ----------
+    df : pd.DataFrame
+        Base complète.
+    annee_jo : int ou str, optionnel
+        - 2016, 2020, 2024 : camembert pour une année donnée
+        - "all" (défaut)   : agrégation sur toutes les années JO
+
+    Retour
+    ------
+    plotly.graph_objects.Figure
+    """
+    if df is None or df.empty:
+        raise ValueError("df est vide.")
+    if "code_sport" not in df.columns:
+        raise ValueError("La colonne 'code_sport' est requise.")
+
+    annees_disponibles = [2016, 2020, 2024]
+
+    # Détermination des années à utiliser
+    if annee_jo == "all":
+        annees = annees_disponibles
+        titre_annee = "JO 2016–2024"
+    elif annee_jo in annees_disponibles:
+        annees = [annee_jo]
+        titre_annee = f"JO {annee_jo}"
+    else:
+        raise ValueError("annee_jo doit être 2016, 2020, 2024 ou 'all'.")
+
+    # Colonnes médailles nécessaires
+    medal_cols = []
+    for y in annees:
+        for m in ["or", "argent", "bronze"]:
+            col = f"{y}_{m}"
+            if col not in df.columns:
+                raise ValueError(f"Colonne manquante : {col}")
+            medal_cols.append(col)
+
+    # 1) Déduplication par sport + exclusion DIV
+    tmp = df[df["code_sport"] != "DIV"][["code_sport"] + medal_cols].copy()
+    by_sport = tmp.groupby("code_sport", as_index=False).max(numeric_only=True)
+
+    # 2) Agrégation France
+    or_total = sum(by_sport[f"{y}_or"].sum() for y in annees)
+    argent_total = sum(by_sport[f"{y}_argent"].sum() for y in annees)
+    bronze_total = sum(by_sport[f"{y}_bronze"].sum() for y in annees)
+
+    total = or_total + argent_total + bronze_total
+
+    df_pie = pd.DataFrame(
+        {
+            "type_medaille": ["Or", "Argent", "Bronze"],
+            "nb": [or_total, argent_total, bronze_total],
+        }
+    )
+
+    color_map = {
+        "Or": "#F2C300",
+        "Argent": "#B0B0B0",
+        "Bronze": "#8C6239",
+    }
+
+    fig = px.pie(
+        df_pie,
+        names="type_medaille",
+        values="nb",
+        color="type_medaille",
+        color_discrete_map=color_map,
+        hole=0.35,
+        title=f"Répartition des médailles – France ({titre_annee})<br>Total = {int(total)}",
+    )
+
+    fig.update_traces(textinfo="percent+value", textposition="inside")
+    fig.update_layout(template="plotly_white", legend_title_text="Médaille")
 
     return fig
