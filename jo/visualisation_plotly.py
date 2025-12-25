@@ -122,12 +122,22 @@ def licences_par_annee(df, sport_code="all", sport_col="code_sport"):
     )
     agg = agregation_licences_par_annee(d)
 
+    # Titre
+    if sport_code == "all":
+        titre_sport = "Tous sports"
+    else:
+        titre_sport = df.loc[df[sport_col] == sport_code, "sport"].iloc[0]
+
     fig = px.line(
         agg,
         x="annee",
         y="licences_annuelles",
         markers=True,
-        title="Licences par année",
+        title=f"Nombre de licences par année — {titre_sport}",
+        labels={
+            "annee": "Année",
+            "licences_annuelles": "Nombre de licenciés"
+        },
     )
     fig.update_xaxes(dtick=1)
     return fig
@@ -614,7 +624,10 @@ def graphique_part_jeunes(df_lic, age_max=15, sport_code="all", sport_col="code_
     )
 
     # Titre
-    titre = "Tous sports" if sport_code == "all" else sport_code
+    if sport_code == "all":
+        titre_sport = "Tous sports"
+    else:
+        titre_sport = df_lic.loc[df_lic[sport_col] == sport_code, "sport"].iloc[0]
 
     # Tracé
     fig = px.line(
@@ -622,7 +635,7 @@ def graphique_part_jeunes(df_lic, age_max=15, sport_code="all", sport_col="code_
         x="annee",
         y="part_jeunes",
         markers=True,
-        title=f"Part des jeunes (< {age_max} ans) – {titre}",
+        title=f"Part des jeunes (< {age_max} ans) – {titre_sport}",
         labels={"annee": "Année", "part_jeunes": "Part des jeunes"},
     )
 
@@ -687,7 +700,11 @@ def graphique_part_femmes(df_lic, sport_code="all", sport_col="code_sport"):
     )
 
     # Titre
-    titre = "Tous sports" if sport_code == "all" else sport_code
+    if sport_code == "all":
+        titre_sport = "Tous sports"
+    else:
+        titre_sport = df_lic.loc[df_lic[sport_col] == sport_code, "sport"].iloc[0]
+
 
     # Tracé
     fig = px.line(
@@ -695,7 +712,7 @@ def graphique_part_femmes(df_lic, sport_code="all", sport_col="code_sport"):
         x="annee",
         y="part_femmes",
         markers=True,
-        title=f"Part des femmes – {titre}",
+        title=f"Part des femmes – {titre_sport}",
         labels={"annee": "Année", "part_femmes": "Part des femmes"},
     )
 
@@ -748,13 +765,16 @@ def heatmap_nbr_licencies(df_lic, sport_code="all", sport_col="code_sport"):
     pivot = pivot.loc[sorted(pivot.index, key=_lower_bound), :].sort_index(axis=1)
 
     # Titre
-    titre = "Tous sports" if sport_code == "all" else sport_code
+    if sport_code == "all":
+        titre_sport = "Tous sports"
+    else:
+        titre_sport = df_lic.loc[df_lic[sport_col] == sport_code, "sport"].iloc[0]
 
     # Tracé
     fig = px.imshow(
         pivot,
         aspect="auto",
-        title=f"Heatmap licences (tranche d'âge × année) – {titre}",
+        title=f"Heatmap licences (tranche d'âge × année) – {titre_sport}",
         labels={"x": "Année", "y": "Tranche d'âge", "color": "Licences"},
         color_continuous_scale="Blues"
     )

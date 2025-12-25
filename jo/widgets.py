@@ -92,10 +92,20 @@ def widget_licences_par_sport(df):
         Affiche le widget et le graphique dans le notebook.
 
     """
-    sports = ["all"] + sorted(df["sport"].dropna().unique())
-    sport_widget = widgets.Dropdown(options=sports, description="Sport :", value="all")
+    # on crée une table unique code -> nom
+    ref = (
+        df[["code_sport", "sport"]]
+        .dropna()
+        .drop_duplicates()
+        .sort_values("sport")
+    )
 
-    def update():
+    # options : "Tous sports" + (Nom affiché, Code utilisé)
+    options = [("Tous sports", "all")] + list(zip(ref["sport"], ref["code_sport"]))
+
+    sport_widget = widgets.Dropdown(options=options, description="Sport :", value="all")
+
+    def update(change=None):  # pylint: disable=unused-argument
         return licences_par_annee(df, sport_code=sport_widget.value)
 
     _run_widget(update, [sport_widget])

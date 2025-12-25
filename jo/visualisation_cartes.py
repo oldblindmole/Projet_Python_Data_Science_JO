@@ -28,7 +28,6 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     """
     df = data_complet.dropna(subset=["code_dep"]).copy()
 
-
     # Filtrage des données selon le sport
     if sport != "all":
         df = df[df["sport"] == sport]
@@ -55,6 +54,12 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     # Calcul de la proportion de licenciés (en %)
     merged["taux_licencies"] = 100 * merged["licences_annuelles"] / merged["population"]
 
+    # Titre
+    if sport == "all":
+        titre_sport = "Tous sports"
+    else:
+        titre_sport = df.loc[df[sport] == sport, "sport"].iloc[0]
+
     # Tracé
     ax = merged.plot(
         column="taux_licencies",
@@ -72,7 +77,9 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     )
 
     # Titre
-    ax.set_title(f"Licenciés / population (%) – {sport} – {annee} (pop {pop_ref_year})")
+    ax.set_title(
+        f"Part des licenciés dans la population (%) – {titre_sport} – {annee} (population de {pop_ref_year})"
+    )
 
     # Suppression des axes
     ax.axis("off")
@@ -155,9 +162,7 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
     else:
         titre_sport = f"({sport})"
 
-    ax.set_title(
-        f"Taux de croissance {titre_sport} – {annee1}-{annee2}"
-    )
+    ax.set_title(f"Taux de croissance {titre_sport} – {annee1}-{annee2}")
 
     # Suppression des axes
     ax.axis("off")
