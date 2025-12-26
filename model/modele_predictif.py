@@ -1,6 +1,7 @@
 
 """
-Fonctions pour la prédiction du nombre de licencié.
+Modèle prédictif du nombre de licenciés (Ridge) et visualisation des prédictions.
+Ce module entraîne un modèle Ridge sur la cible `log(1 + nb_licencies)`.
 """
 
 from __future__ import annotations
@@ -21,7 +22,8 @@ def train_ridge_predictif(
     extra_controls: list[str] | None = None,
 ) -> dict:
     """
-    Entraîne un modèle Ridge prédictif en log avec FE sport (one-hot) et lag.
+    Entraîne un modèle Ridge prédictif sur le log des licenciés, avec effet fixe sport
+    (one-hot), une tendance par sport et un terme de dynamique via le lag.
 
     Modèle (log) :
         log(1+lic_t) ~ log(1+lic_{t-1}) + trend + med_last + controls + FE_sport
@@ -51,24 +53,30 @@ def train_ridge_predictif(
         - 'train_df', 'test_df'
         - 'metrics' : dict (R2 log, MAE niveau)
     """
+    # Tri et copie défensive
     dfs = df_model_full.sort_values(["code_sport", "annee"]).copy()
 
+    # Cible en log(1 + x) et lag(1) de la cible (dynamique)
     dfs["log_lic"] = np.log1p(dfs["nb_licencies"])
     dfs["log_lic_lag1"] = dfs.groupby("code_sport")["log_lic"].shift(1)
 
-    # tendance simple (par sport)
+    # Tendance linéaire simple propre à chaque sport : (annee - première année du sport)
     dfs["trend"] = dfs.groupby("code_sport")["annee"].transform(lambda s: s - s.min())
 
+    # Variable médailles associée aux JO de référence
     dfs["med_last"] = dfs[medals_col]
 
-    # garder uniquement obs avec lag
+    # On conserve uniquement les observations disposant d'un lag
     dfs = dfs.dropna(subset=["log_lic_lag1"]).copy()
 
+    # Découpage train / test
     train_df = dfs[(dfs["annee"] >= train_years[0]) & (dfs["annee"] <= train_years[1])].copy()
     test_df = dfs[(dfs["annee"] >= test_years[0]) & (dfs["annee"] <= test_years[1])].copy()
 
+    # Features numériques de base
     features_num = ["log_lic_lag1", "trend", "med_last"]
 
+    # Contrôles optionnels
     if extra_controls is None:
         candidates = ["part_femmes", "age_mean", "nb_departements_actifs"]
         extra_controls = [c for c in candidates if c in dfs.columns]
@@ -78,7 +86,8 @@ def train_ridge_predictif(
     features_num += extra_controls
     features_num = [c for c in features_num if c in dfs.columns]
 
-    X_train = (
+    # Construction des matrices X avec effets fixes sport (one-hot)
+    X_train = ( #pylint: disable=C0103
         pd.get_dummies(
             train_df[["code_sport"] + features_num],
             columns=["code_sport"],
@@ -87,7 +96,7 @@ def train_ridge_predictif(
         .astype("float32")
     )
 
-    X_test = (
+    X_test = ( #pylint: disable=C0103
         pd.get_dummies(
             test_df[["code_sport"] + features_num],
             columns=["code_sport"],
@@ -96,16 +105,19 @@ def train_ridge_predictif(
         .astype("float32")
     )
 
-    X_test = X_test.reindex(columns=X_train.columns, fill_value=0).astype("float32")
+    # Alignement des colonnes train/test (sports absents du train => colonnes à 0)
+    X_test = X_test.reindex(columns=X_train.columns, fill_value=0).astype("float32") #pylint: disable=C0103
 
+    # Vecteurs cibles
     y_train = train_df["log_lic"].astype("float32").values
     y_test = test_df["log_lic"].astype("float32").values
 
+    # Entraînement Ridge
     model = Ridge(alpha=alpha)
     model.fit(X_train, y_train)
 
+    # Prédictions et métriques
     pred_log_test = model.predict(X_test)
-
     metrics = {
         "r2_log": float(r2_score(y_test, pred_log_test)),
         "mae_niveau": float(mean_absolute_error(np.expm1(y_test), np.expm1(pred_log_test))),
@@ -123,7 +135,7 @@ def train_ridge_predictif(
 
 def plot_pred_sport(bundle: dict, code_sport: str):
     """
-    Trace observé vs prédit sur la période test pour un sport.
+    Trace, pour un sport donné, les licenciés observés vs prédits sur la période de test.
 
     Paramètres
     ----------
@@ -141,15 +153,17 @@ def plot_pred_sport(bundle: dict, code_sport: str):
     """
     model = bundle["model"]
     features_num = bundle["features_num"]
-    X_train_cols = bundle["X_train_cols"]
+    X_train_cols = bundle["X_train_cols"] #pylint: disable=C0103
     test_df = bundle["test_df"]
 
+    # Sous-échantillon : observations test du sport demandé
     d = test_df[test_df["code_sport"] == code_sport].sort_values("annee").copy()
     if d.empty:
         print(f"Aucune donnée test pour {code_sport}")
         return None
 
-    Xd = (
+    # Construction de la matrice de features (mêmes colonnes que le train)
+    Xd = ( #pylint: disable=C0103
         pd.get_dummies(
             d[["code_sport"] + features_num],
             columns=["code_sport"],
@@ -160,9 +174,11 @@ def plot_pred_sport(bundle: dict, code_sport: str):
         .astype("float32")
     )
 
+    # Prédictions : passage log -> niveau
     d["pred_log"] = model.predict(Xd)
     d["pred_nb_licencies"] = np.expm1(d["pred_log"])
 
+    # Affichage observé vs prédit
     plt.figure(figsize=(8, 5))
     plt.plot(d["annee"], d["nb_licencies"], marker="o", linewidth=2, label="observé")
     plt.plot(d["annee"], d["pred_nb_licencies"], marker="o", linewidth=2, label="prédit")
