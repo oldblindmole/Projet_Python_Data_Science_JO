@@ -3,7 +3,7 @@
 _Autrices : Melissa MIGAN; Camille PEYTHIEUX-TALDIR, Romane PLUQUET_
 
 ## Sujet : Influence des médailles remportées par la France aux Jeux Olympiques sur le nombre le licenciés sportifs en France.
-**Titre** #TODO présenter en quelques lignes le sujet
+Les Jeux Olympiques de Paris 2024 ont été présentés comme une réussite artistique, économique et sportive. Les athlètes français ont été largement médiatisés, et ont remporté un nombre important de médailles. Ces Jeux ont également été l'occasion d'une forte médiatisation de sports jusque là relativement méconnus en France, comme tennis de table grâce aux performances des frères Lebrun. Dans ce cas, la réussite sportive aux Jeux Olympiques affecte-t-elle la pratique sportive de la population française ? Nous mesurerons ici la réussite sportive aux Jeux grâce aux médailles olympiques remportées, et la pratique sportive de la population grâce au nombre de licenciés sportifs.
 
 **Problématique** : Le fait de remporter des médailles olympiques incite-t-il à la pratique sportive ? 
 
