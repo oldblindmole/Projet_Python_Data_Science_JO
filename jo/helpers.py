@@ -230,7 +230,7 @@ def classement_sports_medailles(data_complet, annee="all"):
     return df_classement
 
 
-def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
+def croissance_licencies_post_jo(data_complet, annee_jo, delta):
     """
     Calcule le taux de croissance du nombre de licenciés sportifs entre l'année
     des Jeux Olympiques (t) et t + delta, en se restreignant aux sports ayant
@@ -269,8 +269,10 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
     ].sum()
 
     # Année de référence pour les licenciés
-    annee_lic = 2021 if annee_jo == 2020 else annee_jo
-    annee_lic_plus_delta = annee_lic + delta
+    annee_lic_plus_delta = annee_jo + delta
+
+    # Année de référence pour les médailles 
+    if annee_jo == 
 
     rows = []
 
@@ -290,11 +292,11 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
         df_s = lic_sport_annee[lic_sport_annee["sport"] == sport]
 
         # Vérification de la présence des deux années nécessaires
-        if (df_s["annee"] == annee_lic).any() and (
+        if (df_s["annee"] == annee_jo).any() and (
             df_s["annee"] == annee_lic_plus_delta
         ).any():
             l_t = float(
-                df_s.loc[df_s["annee"] == annee_lic, "licences_annuelles"].iloc[0]
+                df_s.loc[df_s["annee"] == annee_jo, "licences_annuelles"].iloc[0]
             )
             l_t_delta = float(
                 df_s.loc[
@@ -307,10 +309,9 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
                 rows.append(
                     {
                         "sport": sport,
-                        "annee_jo": annee_jo,
-                        "annee_licences_t": annee_lic,
+                        "annee_licences_t": annee_jo,
                         "licences_t": l_t,
-                        "licences_t_plus_2": l_t_delta,
+                        f"licences_t_plus_{delta}": l_t_delta,
                         "taux_croissance": 100 * (l_t_delta - l_t) / l_t,
                     }
                 )
@@ -320,10 +321,9 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta=2):
         rows,
         columns=[
             "sport",
-            "annee_jo",
             "annee_licences_t",
             "licences_t",
-            "licences_t_plus_2",
+            f"licences_t_plus_{delta}",
             "taux_croissance",
         ],
     )
