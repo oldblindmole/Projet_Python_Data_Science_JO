@@ -230,15 +230,14 @@ def classement_sports_medailles(data_complet, annee="all"):
     return df_classement
 
 
-def croissance_licencies_post_jo(data_complet, annee_jo, delta):
+def croissance_licencies_post_jo(data_complet, annee_t, delta):
     """
     Calcule le taux de croissance du nombre de licenciés sportifs entre l'année
     des Jeux Olympiques (t) et t + delta, en se restreignant aux sports ayant
     remporté au moins une médaille lors de cette même édition.
 
     Cas particulier :
-    - Les Jeux Olympiques de 2020 s'étant tenus en 2021, l'année 2021 est utilisée
-      comme année de référence pour les licenciés, tandis que les médailles
+    - Si le Jeux Olympiques de 2020 se sont tenus en 2021 les médailles
       restent rattachées à l'édition JO 2020.
 
     Paramètres
@@ -247,9 +246,10 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta):
         Base complète des licenciés. Doit contenir au minimum :
         - 'sport', 'annee', 'licences_annuelles'
         - les colonnes de médailles : '{annee}_or', '{annee}_argent', '{annee}_bronze'
-    annee_jo : int
-        Année des Jeux Olympiques (ex : 2016, 2020, 2024).
-    delta : int, optionnel (par défaut = 2)
+    annee_t : int
+        Année de départ du calcul du taux de croissance, devant correspondre à une année où se sont déroulé des JO, ou à 2019 
+        (donc à 2016, 2019 ou 2020).
+    delta : int
         Horizon temporel (en années) pour mesurer la croissance post-JO.
 
     Retour
@@ -257,10 +257,9 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta):
     df_croissance : pandas.DataFrame
         Table classée par taux de croissance décroissant, contenant :
         - sport
-        - annee_jo
-        - annee_licences_t
+        - annee_licences_t 
         - licences_t
-        - licences_t_plus_2
+        - licences_t_plus_delta
         - taux_croissance (en %)
     """
     # Agrégation des licenciés par sport et par année
@@ -268,16 +267,16 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta):
         "licences_annuelles"
     ].sum()
 
-    # Année de référence pour les licenciés
-    annee_lic_plus_delta = annee_jo + delta
+    # Année finale de calcul du taux de croissance 
+    annee_lic_plus_delta = annee_t + delta
 
-    # Année de référence pour les médailles 
-    if annee_jo == 
+    # Année de référence pour les médailles
+    annee_medaille = 2020 if annee_t == 2019 else annee_t
 
     rows = []
 
     # Identification des sports ayant remporté au moins une médaille l'année JO
-    cols_jo = [f"{annee_jo}_or", f"{annee_jo}_argent", f"{annee_jo}_bronze"]
+    cols_jo = [f"{annee_medaille}_or", f"{annee_medaille}_argent", f"{annee_medaille}_bronze"]
     for c in cols_jo:
         if c not in data_complet.columns:
             data_complet[c] = 0
@@ -292,11 +291,11 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta):
         df_s = lic_sport_annee[lic_sport_annee["sport"] == sport]
 
         # Vérification de la présence des deux années nécessaires
-        if (df_s["annee"] == annee_jo).any() and (
+        if (df_s["annee"] == annee_t).any() and (
             df_s["annee"] == annee_lic_plus_delta
         ).any():
             l_t = float(
-                df_s.loc[df_s["annee"] == annee_jo, "licences_annuelles"].iloc[0]
+                df_s.loc[df_s["annee"] == annee_t, "licences_annuelles"].iloc[0]
             )
             l_t_delta = float(
                 df_s.loc[
@@ -309,7 +308,7 @@ def croissance_licencies_post_jo(data_complet, annee_jo, delta):
                 rows.append(
                     {
                         "sport": sport,
-                        "annee_licences_t": annee_jo,
+                        "annee_licences_t": annee_t,
                         "licences_t": l_t,
                         f"licences_t_plus_{delta}": l_t_delta,
                         "taux_croissance": 100 * (l_t_delta - l_t) / l_t,
