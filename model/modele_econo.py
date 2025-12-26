@@ -1,8 +1,6 @@
 """
-Fonction qui créer le modèle écononmétrique pour déterminer l'effet des médailles sur les prédictions
-du nombre de licencié
+Estimation économétrique de l'effet des médailles sur la croissance des licenciés.
 """
-
 
 from __future__ import annotations
 
@@ -19,8 +17,8 @@ def fit_modele_croissance(
     medals_col: str = "total_medailles",
 ) -> object:
     """
-    Estime un modèle “écono” en croissance (diff log) avec effets fixes sport + année
-    et erreurs clusterisées par sport.
+    Estime un modèle de croissance (différence de log) avec effets fixes sport et année,
+    et erreurs standards clusterisées au niveau du sport.
 
     Modèle :
         dlog_lic ~ med_last + controls + FE_sport + FE_annee
@@ -43,31 +41,36 @@ def fit_modele_croissance(
     object
         Résultat statsmodels (RegressionResults).
     """
+    # Tri et copie défensive
     dfp = df_model_full.sort_values(["code_sport", "annee"]).copy()
 
-    # log + diff log
+    # Construction de la variable dépendante : diff du log(1 + nb_licencies)
     dfp["log_lic"] = np.log1p(dfp["nb_licencies"])
     dfp["dlog_lic"] = dfp.groupby("code_sport")["log_lic"].diff(1)
 
-    # “médailles last JO”
+    # Variable explicative principale : médailles associées aux JO de référence
     dfp["med_last"] = dfp[medals_col]
 
-    # filtre période + drop croissance manquante (1ère année de chaque sport)
+    # Filtrage de la période et suppression des dlog manquants (première année par sport)
     dfp = dfp[dfp["annee"].between(start_year, end_year)].copy()
     dfp = dfp.dropna(subset=["dlog_lic"]).copy()
 
-    # contrôles
+    # Sélection des contrôles
     if controls is None:
         candidates = ["part_femmes", "age_mean", "nb_departements_actifs"]
         controls = [c for c in candidates if c in dfp.columns]
     else:
         controls = [c for c in controls if c in dfp.columns]
 
+    # Construction du terme de droite (RHS) de la formule
     rhs = "med_last"
     if controls:
         rhs += " + " + " + ".join(controls)
 
+    # Effets fixes sport + année via variables catégorielles
     formula = f"dlog_lic ~ {rhs} + C(code_sport) + C(annee)"
+
+    # Estimation OLS avec erreurs clusterisées au niveau du sport
     model = smf.ols(formula, data=dfp).fit(
         cov_type="cluster",
         cov_kwds={"groups": dfp["code_sport"]},

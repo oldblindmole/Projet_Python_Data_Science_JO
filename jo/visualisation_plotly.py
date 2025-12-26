@@ -1,7 +1,6 @@
 """
 Visualisations Plotly "pures".
 Chaque fonction retourne une figure Plotly (return fig).
-Aucun display, aucun fig.show().
 """
 
 import re
@@ -126,7 +125,7 @@ def licences_par_annee(df, sport_code="all", sport_col="code_sport"):
     ------
     plotly.graph_objects.Figure
     """
-
+    # Filtrage éventuel sur un ou plusieurs codes sport
     d = (
         df
         if sport_code == "all"
@@ -136,6 +135,8 @@ def licences_par_annee(df, sport_code="all", sport_col="code_sport"):
             )
         ]
     )
+
+    # Agrégation annuelle
     agg = agregation_licences_par_annee(d)
 
     # Titre
@@ -144,6 +145,7 @@ def licences_par_annee(df, sport_code="all", sport_col="code_sport"):
     else:
         titre_sport = df.loc[df[sport_col] == sport_code, "sport"].iloc[0]
 
+    # Tracé
     fig = px.line(
         agg,
         x="annee",
@@ -156,7 +158,9 @@ def licences_par_annee(df, sport_code="all", sport_col="code_sport"):
             "licences_annuelles": "Nombre de licenciés"
         },
     )
+
     fig.update_xaxes(dtick=1)
+
     return fig
 
 
@@ -906,7 +910,8 @@ def medailles_par_annee(df):
 
 def camembert_medailles(df, annee_jo="all"):
     """
-    Camembert Plotly de la répartition Or / Argent / Bronze pour la France.
+    Construit un camembert Plotly de la répartition Or / Argent / Bronze
+    des médailles olympiques de la France.
 
     Paramètres
     ----------
@@ -920,14 +925,9 @@ def camembert_medailles(df, annee_jo="all"):
     ------
     plotly.graph_objects.Figure
     """
-    if df is None or df.empty:
-        raise ValueError("df est vide.")
-    if "code_sport" not in df.columns:
-        raise ValueError("La colonne 'code_sport' est requise.")
-
     annees_disponibles = [2016, 2020, 2024]
 
-    # Détermination des années à utiliser
+    # Détermination des années à utiliser selon le paramètre
     if annee_jo == "all":
         annees = annees_disponibles
         titre_annee = "JO 2016–2024"
@@ -954,9 +954,9 @@ def camembert_medailles(df, annee_jo="all"):
     or_total = sum(by_sport[f"{y}_or"].sum() for y in annees)
     argent_total = sum(by_sport[f"{y}_argent"].sum() for y in annees)
     bronze_total = sum(by_sport[f"{y}_bronze"].sum() for y in annees)
-
     total = or_total + argent_total + bronze_total
 
+    # Données au format long pour le camembert
     df_pie = pd.DataFrame(
         {
             "type_medaille": ["Or", "Argent", "Bronze"],
@@ -964,12 +964,14 @@ def camembert_medailles(df, annee_jo="all"):
         }
     )
 
+    # Palette de couleurs
     color_map = {
         "Or": "#F2C300",
         "Argent": "#B0B0B0",
         "Bronze": "#8C6239",
     }
 
+    # Tracé
     fig = px.pie(
         df_pie,
         names="type_medaille",

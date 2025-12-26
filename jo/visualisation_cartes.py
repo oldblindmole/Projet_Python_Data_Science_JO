@@ -56,7 +56,7 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
     # Calcul de la proportion de licenciés (en %)
     merged["taux_licencies"] = 100 * merged["licences_annuelles"] / merged["population"]
 
-    MATTER_COLORS = [
+    couleurs = [
         "#fff2c6",
         "#f6c48b",
         "#ee9b6a",
@@ -65,8 +65,8 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
         "#4b1d4a",
     ]
 
-    _CMAP_LICENCIES = LinearSegmentedColormap.from_list(
-        "matter_manual", MATTER_COLORS, N=256
+    palette = LinearSegmentedColormap.from_list(
+        "matter_manual", couleurs, N=256
     )
     # Titre
     titre_sport = "tous les sports" if sport == "all" else sport
@@ -76,7 +76,7 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
         column="taux_licencies",
         legend=True,
         figsize=(10, 8),
-        cmap=_CMAP_LICENCIES,
+        cmap=palette,
         edgecolor="grey",
         linewidth=0.5,
         missing_kwds={
