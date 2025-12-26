@@ -9,6 +9,8 @@ Le 23 juin 2023, le Président de la République française Emmanuel Macron s'ex
 
 **Problématique** : Le fait de remporter des médailles olympiques incite-t-il à la pratique sportive ? 
 
+Ici, nous considèrerons que le nombre de médailles olympiques remportées représente les victoires sportives aux Jeux Olympiques. De plus, nous mesurerons la pratique sportive en France par le nombre de licenciés sportifs.
+
 ## Données
 Nous exploitons des données de trois types :  
 - nombre et couleur des médailles gagnées aux JO entre 2016 et 2024,
