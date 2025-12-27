@@ -26,7 +26,7 @@ def agreg_licencies_par_sport_annee(df: pd.DataFrame) -> pd.DataFrame:
     -------
     pandas.DataFrame
         DataFrame agrégé avec les colonnes
-        ['code_sport', 'annee', 'nb_licencies'].
+        ['code_sport', 'annee', 'licences_annuelles'].
     """
     df_agg = df.copy()
 

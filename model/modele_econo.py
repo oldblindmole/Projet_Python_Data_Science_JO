@@ -27,7 +27,7 @@ def fit_modele_croissance(
     ----------
     df_model_full : pd.DataFrame
         Dataset final contenant au moins :
-        ['code_sport', 'annee', 'nb_licencies', medals_col]
+        ['code_sport', 'annee', 'licences_annuelles', medals_col]
     start_year : int
     end_year : int
     controls : list[str] | None
@@ -44,8 +44,8 @@ def fit_modele_croissance(
     # Tri et copie défensive
     dfp = df_model_full.sort_values(["code_sport", "annee"]).copy()
 
-    # Construction de la variable dépendante : diff du log(1 + nb_licencies)
-    dfp["log_lic"] = np.log1p(dfp["nb_licencies"])
+    # Construction de la variable dépendante : diff du log(1 + licences_annuelles)
+    dfp["log_lic"] = np.log1p(dfp["licences_annuelles"])
     dfp["dlog_lic"] = dfp.groupby("code_sport")["log_lic"].diff(1)
 
     # Variable explicative principale : médailles associées aux JO de référence
