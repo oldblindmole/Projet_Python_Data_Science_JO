@@ -31,11 +31,11 @@ def agreg_licencies_par_sport_annee(df: pd.DataFrame) -> pd.DataFrame:
     df_agg = df.copy()
 
     # Renommage explicite de la variable à agréger
-    df_agg = df_agg.rename(columns={"licences_annuelles": "nb_licencies"})
+    #df_agg = df_agg.rename(columns={"licences_annuelles": "nb_licencies"})
 
     # Agrégation par sport et par année
     df_agg = df_agg.groupby(["code_sport", "annee"], as_index=False).agg(
-        {"nb_licencies": "sum"}
+        {"licences_annuelles": "sum"}
     )
 
     return df_agg
