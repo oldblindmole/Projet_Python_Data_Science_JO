@@ -405,15 +405,50 @@ def merge_medals(df_agg: pd.DataFrame, df_med: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_model_dataset(df_raw: pd.DataFrame) -> pd.DataFrame:
+    """
+    Construit le dataset final de modélisation au niveau (code_sport, annee)
+    à partir d'un DataFrame brut.
+
+    Paramètres
+    ----------
+    df_raw : pandas.DataFrame
+        DataFrame brut, typiquement chargé depuis un fichier parquet.
+        Il doit contenir au minimum :
+        - 'code_sport', 'annee', 'licences_annuelles'
+        Et, pour les médailles (si utilisées) :
+        - 'sport' + colonnes de médailles par olympiade
+          (ex : '2016_or', '2020_bronze', 'total_medailles_2024', ...)
+        Et, optionnellement pour enrichir les features :
+        - une colonne de sexe parmi {'sexe', 'genre', 'sex', 'gender'}
+        - une colonne d'âge parmi {'age', 'âge', 'Age', 'AGE'}
+
+    Retour
+    ------
+    pandas.DataFrame
+        Dataset final au niveau (code_sport, annee), contenant :
+        - 'code_sport', 'annee'
+        - 'nb_licencies'
+        - 'jo_ref'
+        - médailles associées à 'jo_ref' : 'or', 'argent', 'bronze', 'total_medailles'
+        - features issues de `build_lic_features` (âge, sexe, lags, croissances, etc.)
+          lorsque ces informations sont disponibles dans `df_raw`.
+    """
+
+    # Agrégation des licenciés au niveau (code_sport, annee)
     df_agg = agreg_licencies_par_sport_annee(df_raw)
+
+    # Ajout de l'année JO de référence pour chaque année d'observation
     df_agg = ajouter_jo_ref(df_agg, annee_col="annee")
 
+    # Construction et fusion des médailles au niveau (code_sport, jo_ref)
     df_sport = build_df_sport(df_raw)
     df_med = build_df_med_long(df_sport)
     df_model = merge_medals(df_agg, df_med)
 
+    # Features additionnelles issues du brut (sexe, âge, lags, croissances…)
     lic_feat = build_lic_features(df_raw)
 
+    # Fusion finale
     df_final = df_model.merge(
         lic_feat.drop(columns=["licences_annuelles"], errors="ignore"),
         on=["code_sport", "annee"],
