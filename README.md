@@ -3,7 +3,7 @@
 _Autrices : Melissa MIGAN; Camille PEYTHIEUX-TALDIR, Romane PLUQUET (2025)._
 
 ## Sujet : Influence des médailles remportées par la France aux Jeux Olympiques sur le nombre le licenciés sportifs en France.
-Les Jeux Olympiques de 2024 se sont tenus du 26 juillet au 11 août 2024 à Paris, en Sein-Saint-Denis, à Marseille et à Tahiti. Ils ont été présentés comme une réussite sportive pour la France : la délégation française y a obtenu son record de médailles depuis 1900, et l'athlète le plus titré des Jeux de Paris est le nageur français Léon Marchand (4 médailles d'or). De plus, cette édition a permis de mettre en lumière et de médiatiser des sports plus méconnus en France, comme le tennis de table grâce aux frères Lebrun. 
+Les Jeux Olympiques de 2024 se sont tenus du 26 juillet au 11 août 2024 à Paris, en Seine-Saint-Denis, à Marseille et à Tahiti. Ils ont été présentés comme une réussite sportive pour la France : la délégation française y a obtenu son record de médailles depuis 1900, et l'athlète le plus titré des Jeux de Paris est le nageur français Léon Marchand (4 médailles d'or). De plus, cette édition a permis de mettre en lumière et de médiatiser des sports plus méconnus en France, comme le tennis de table grâce aux frères Lebrun. 
 
 Le 23 juin 2023, le Président de la République française Emmanuel Macron s'exprimait sur France Télévision. Il y développait l'idée suivante : "_En matière sportive, qu’est-ce que ça veut dire ? Grâce à nos JO, [...] accompagner nos clubs, nos associations, évidemment, toutes les fédérations sportives qui structurent le sport en France[...]. L'objectif de tout ça, c'est faire quoi ? De la France, cette nation sportive. De plus en plus de jeunes et d'adultes pratiqueront le sport en vue des J.O._" Emmanuel Macron insiste alors sur l'idée suivante : les Jeux Olympiques de Paris 2024 auraient également pour but de dynamiser la pratique sportive en France.
 
@@ -22,7 +22,7 @@ Ces données sont obtenues par trois sources différentes, respectivement :
 - fichiers CSV fournis par l'Injep (Institut national de la jeunesse et de l'éducation populaire), importés au format parquet car trop lourds pour un repo git, 
 - requête via l'API Melodi de l'INSEE. 
 
-La base de données de l'INJEP a l'avantage de présenter une classfication fine des licenciés selon leurs caractéristiques socio-démographiques (âge, sexe, département d'exercice).
+La base de données de l'INJEP a l'avantage de présenter une classification fine des licenciés selon leurs caractéristiques socio-démographiques (âge, sexe, département d'exercice).
 
 ## Modèle
 #TODO raconter quels modèles on a utilisé tout ça
@@ -30,12 +30,15 @@ La base de données de l'INJEP a l'avantage de présenter une classfication fine
 ## Reproduction du projet
 **Installation**. Cloner le projet.
 Installer les dépendances Python à l’aide de la commande :
-`pip install -r requirements.txt`
+```python
+pip install -r requirements.txt
+```
 
 **Lancement**. Ouvrir le notebook `main.ipynb`, qui constitue le rapport analytique principal du projet.
 
 ## Structure du repo
 - dossier `data` : dossier contenant les données brutes et receptionnant les données nettoyées, 
 - dossier `jo`: package permettant la visualisation interactive des données,
-- dossier `traitement`: package permettant la récupération et le nettoyage des données, 
+- dossier `traitement`: package permettant la récupération et le nettoyage des données,
+- dossier `model`: package permattant la modélisation des données,
 - fichier `main.ipynb` : notebook principal servant de rapport analytique et de support de restitution.
