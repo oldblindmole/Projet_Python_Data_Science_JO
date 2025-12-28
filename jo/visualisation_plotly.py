@@ -592,7 +592,7 @@ def graphique_licences_par_sexe(df_lic, sport_code="all", sport_col="code_sport"
     return fig
 
 
-def graphique_part_jeunes(df_lic, age_max=15, sport_code="all", sport_col="code_sport"):
+def graphique_part_jeunes(df_lic, age_max=21, sport_code="all", sport_col="code_sport"):
     """
     Construit une figure Plotly de la part de jeunes (< age_max) parmi les licenciés, par année.
 
