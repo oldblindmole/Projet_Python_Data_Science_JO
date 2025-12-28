@@ -186,10 +186,10 @@ def build_lic_features(df_lic: pd.DataFrame) -> pd.DataFrame:
 def jo_reference(annee: int) -> int:
     if annee <= 2020:
         return 2016
-    elif annee < 2024:
+    elif annee <= 2024:
         return 2020
-    else:
-        return 2024
+    # else:
+    #     return 2024
 
 
 def ajouter_jo_ref(df: pd.DataFrame, annee_col: str = "annee") -> pd.DataFrame:
