@@ -16,7 +16,7 @@ from .helpers import (
 )
 
 
-def graphique_licences_et_medailles(df, sport = "all"):
+def graphique_licences_et_medailles(df, sport="all"):
     """
     Construit un graphique Plotly combinant l'évolution des licenciés et des médailles.
 
@@ -77,7 +77,7 @@ def graphique_licences_et_medailles(df, sport = "all"):
                 y=[medals_by_year[y][m] for y in years],
                 name=m.capitalize(),
                 marker_color=medal_colors[m],
-                width=0.5
+                width=0.5,
             ),
             secondary_y=True,
         )
@@ -99,7 +99,7 @@ def graphique_licences_et_medailles(df, sport = "all"):
         barmode="stack",
         hovermode="x unified",
         width=1100,
-        height=600
+        height=600,
     )
     fig.update_xaxes(title="Année")
     fig.update_yaxes(title="Licenciés", secondary_y=False)
@@ -153,10 +153,7 @@ def licences_par_annee(df, sport_code="all", sport_col="code_sport"):
         markers=True,
         title=f"Nombre de licences par année — {titre_sport}",
         color_discrete_sequence=["darkorchid"],
-        labels={
-            "annee": "Année",
-            "licences_annuelles": "Nombre de licenciés"
-        },
+        labels={"annee": "Année", "licences_annuelles": "Nombre de licenciés"},
     )
 
     fig.update_xaxes(dtick=1)
@@ -400,18 +397,16 @@ def repartition_grandes_tranches_age_par_sport(df, annee="all"):
     df_long["proportion"] = df_long["proportion"] * 100
 
     # Palette : on garde NR en noir
-    tranches = sorted(df_long["grande_tranche_age"].unique())
-    tranches_no_nr = [t for t in tranches if t != "NR - Non réparti"]
-    n = len(tranches_no_nr)
-    colors = px.colors.sample_colorscale(
-        px.colors.sequential.Plasma_r,
-        [i / (n - 1) for i in range(n)] if n > 1 else [0.5],
-    )
+    palette = ["#f6c48b", "#ee9b6a", "#d65a5a", "#8b2d5c", "black"]
 
-    # Assigner les couleurs aux tranches (et NR en noir)
-    palette_map = {t: c for t, c in zip(tranches_no_nr, colors)}
-    if "NR - Non réparti" in tranches:
-        palette_map["NR - Non réparti"] = "black"
+    # Forcer l'ordre
+    ordre = [
+        "1 - Enfants (1-13)",
+        "2 - Jeunes (14-20)",
+        "3 - Adultes (21-55)",
+        "4 - Seniors (56-99)",
+        "NR - Non réparti",
+    ]  # <-- adapte à TES libellés exacts
 
     # Tracé
     fig = px.bar(
@@ -419,7 +414,8 @@ def repartition_grandes_tranches_age_par_sport(df, annee="all"):
         x="proportion",
         y="sport",
         color="grande_tranche_age",
-        color_discrete_map=palette_map,
+        category_orders={"grande_tranche_age": ordre},
+        color_discrete_sequence=palette,
         orientation="h",
         barmode="stack",
         labels={
@@ -486,7 +482,7 @@ def repartition_fines_tranches_age_par_sport(df, annee="all"):
     n = len(tranches_no_nr)
 
     colors = px.colors.sample_colorscale(
-        px.colors.sequential.Plasma_r,
+        px.colors.sequential.matter,
         [i / (n - 1) for i in range(n)] if n > 1 else [0.5],
     )
 
@@ -586,7 +582,7 @@ def graphique_licences_par_sexe(df_lic, sport_code="all", sport_col="code_sport"
         labels={
             "annee": "Année",
             "licences_annuelles": "Nombre de licenciés",
-            "sexe_label": "Sexe"
+            "sexe_label": "Sexe",
         },
     )
 
@@ -731,7 +727,6 @@ def graphique_part_femmes(df_lic, sport_code="all", sport_col="code_sport"):
     else:
         titre_sport = df_lic.loc[df_lic[sport_col] == sport_code, "sport"].iloc[0]
 
-
     # Tracé
     fig = px.line(
         merged.sort_values("annee"),
@@ -802,7 +797,7 @@ def heatmap_nbr_licencies(df_lic, sport_code="all", sport_col="code_sport"):
         aspect="auto",
         title=f"Heatmap licences (tranche d'âge × année) – {titre_sport}",
         labels={"x": "Année", "y": "Tranche d'âge", "color": "Licences"},
-        color_continuous_scale="matter"
+        color_continuous_scale="matter",
     )
 
     return fig
@@ -824,9 +819,15 @@ def medailles_par_annee(df):
 
     # Colonnes correspondant aux médailles par année et par couleur
     medal_cols = [
-        "2016_or", "2016_argent", "2016_bronze",
-        "2020_or", "2020_argent", "2020_bronze",
-        "2024_or", "2024_argent", "2024_bronze",
+        "2016_or",
+        "2016_argent",
+        "2016_bronze",
+        "2020_or",
+        "2020_argent",
+        "2020_bronze",
+        "2024_or",
+        "2024_argent",
+        "2024_bronze",
     ]
     total_cols = [
         "total_medailles_2016",

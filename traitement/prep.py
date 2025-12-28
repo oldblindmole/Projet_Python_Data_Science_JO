@@ -16,6 +16,7 @@ from . import URL_JO, DATA_DIR
 
 # Chargement de la page Wikipedia
 
+
 def soup_from_url(url=URL_JO):
     """
     Télécharge et analyse une page Wikipedia.
@@ -31,15 +32,16 @@ def soup_from_url(url=URL_JO):
         Objet BeautifulSoup contenant le HTML parsé.
     """
     response = requests.get(
-        url,
-        headers={"User-Agent": "Python data science project"},
-        timeout=10
+        url, headers={"User-Agent": "Python data science project"}, timeout=10
     )
+
     response.raise_for_status()
+
     return BeautifulSoup(response.content, "lxml")
 
 
 # Scraping des tableaux de médailles
+
 
 def tableau_scraper(soup, id_html):
     """
@@ -89,6 +91,7 @@ def tableau_scraper(soup, id_html):
 
 # Sauvegarde d'un tableau de médailles
 
+
 def gel_tableau_medailles(type_medaille, id_html):
     """
     Scrape un tableau de médailles et le sauvegarde en CSV.
@@ -105,8 +108,13 @@ def gel_tableau_medailles(type_medaille, id_html):
     output_path = DATA_DIR / "data_brut" / f"data_{type_medaille}_jo.csv"
     data.to_csv(output_path, index=False)
 
+    print(
+        f"La page Wikipedia a été correctement scrapée, et le tableau des médailles {type_medaille} a été correctement gelé." # pylint: disable=C0301
+    )
+
 
 # Nettoyage d'une base de médailles
+
 
 def nettoyer_base(df):
     """
@@ -125,11 +133,12 @@ def nettoyer_base(df):
     df = df.dropna(how="all")
     df = df.drop(df.tail(3).index)
     df = df[["Sport", "2024", "2020", "2016"]]
-    df["Sport"].str.replace("Rugby à 7", "Rugby", regex=False)
+    df["Sport"] = df["Sport"].str.replace("Rugby à 7", "Rugby", regex=False)
     return df
 
 
 # Fusion des bases de médailles
+
 
 def fusionner_bases(data_or, data_argent, data_bronze):
     """
@@ -165,14 +174,42 @@ def fusionner_bases(data_or, data_argent, data_bronze):
 
     # Ajout des codes sport
     code_list = [
-        "ATH","AVI","BAD","BAK","BOX",
-        "DIV","CAK","CYC","ESD","ESC",
-        "FOO","GOL","GYM","HAL","HAN",
-        "HOC","JUD","KAR","LUT","NAT",
-        "DIV","PEN","DIV","RUG","SKT",
-        "SUR","TAE","TEN","TDT","TIR",
-        "TAR","TRI","VOI","VOL","DIV",
-        "EQU"
+        "ATH",
+        "AVI",
+        "BAD",
+        "BAK",
+        "BOX",
+        "DIV",
+        "CAK",
+        "CYC",
+        "ESD",
+        "ESC",
+        "FOO",
+        "GOL",
+        "GYM",
+        "HAL",
+        "HAN",
+        "HOC",
+        "JUD",
+        "KAR",
+        "LUT",
+        "NAT",
+        "DIV",
+        "PEN",
+        "DIV",
+        "RUG",
+        "SKT",
+        "SUR",
+        "TAE",
+        "TEN",
+        "TDT",
+        "TIR",
+        "TAR",
+        "TRI",
+        "VOI",
+        "VOL",
+        "DIV",
+        "EQU",
     ]
     data_medailles.insert(0, "code_sport", code_list)
 
@@ -191,6 +228,7 @@ def fusionner_bases(data_or, data_argent, data_bronze):
 
 
 # Construction et sauvegarde de la base finale
+
 
 def gel_base_medailles_finale(nom_fichier="data_medailles_jo.csv"):
     """
@@ -219,6 +257,7 @@ def gel_base_medailles_finale(nom_fichier="data_medailles_jo.csv"):
 
 # Réorganise les colonnes des fichiers licences
 
+
 def reorganiser_colonnes(liste_fichiers):
     """
     Réorganise les colonnes de tous les fichiers parquet
@@ -227,7 +266,7 @@ def reorganiser_colonnes(liste_fichiers):
     Paramètres
     ----------
     liste_fichiers : list[str]
-        Liste des fichiers de licences. 
+        Liste des fichiers de licences.
 
     Retour
     ------
@@ -247,6 +286,7 @@ def reorganiser_colonnes(liste_fichiers):
 
 
 # Normalisation des caractères en unicode dans la base licences
+
 
 def normalisation_unicode(table):
     """
@@ -281,6 +321,7 @@ def normalisation_unicode(table):
 
 # Ajout du code sport à la base licences
 
+
 def code_sport(df):
     """
     Ajoute le code_sport à la base des licenciés.
@@ -297,30 +338,124 @@ def code_sport(df):
     """
     # liste de codes sport dont l'ordre correspond à celui de la liste des fédérations.
     code_list = [
-        "ATH","AVI","BAD","BAK","BOX",
-        "CAK","CYC","EQU","ESC","FOO",
-        "DIV","GYM","HAL","HAN","HOC",
-        "JUD","LUT","NAT","PEN","DIV",
-        "TAE","TEN","TDT","TIR","TAR",
-        "TRI","VOI","VOL","DIV","GOL",
-        "RUG","ESD","SKT","SUR","BAS",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","KAR","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","RUG","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV","DIV","DIV",
-        "DIV","DIV","DIV",
+        "ATH",
+        "AVI",
+        "BAD",
+        "BAK",
+        "BOX",
+        "CAK",
+        "CYC",
+        "EQU",
+        "ESC",
+        "FOO",
+        "DIV",
+        "GYM",
+        "HAL",
+        "HAN",
+        "HOC",
+        "JUD",
+        "LUT",
+        "NAT",
+        "PEN",
+        "DIV",
+        "TAE",
+        "TEN",
+        "TDT",
+        "TIR",
+        "TAR",
+        "TRI",
+        "VOI",
+        "VOL",
+        "DIV",
+        "GOL",
+        "RUG",
+        "ESD",
+        "SKT",
+        "SUR",
+        "BAS",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "KAR",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "RUG",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
+        "DIV",
     ]
 
     # appariement des fédérations avec le bon code sport.
@@ -334,6 +469,7 @@ def code_sport(df):
 
 
 # Création du code département pour la base des licences
+
 
 def code_dep(df, var):
     """
@@ -357,6 +493,7 @@ def code_dep(df, var):
 
 
 # Renommer les colonnes de la base licences
+
 
 def renommer_colonnes(df):
     """
@@ -391,9 +528,11 @@ def renommer_colonnes(df):
 
     return df
 
+
 # Gel de la base en parquet
 
-def gel_parquet(df, nom_fichier:str):
+
+def gel_parquet(df, nom_fichier: str):
     """
     Gel de la base des licenciés en fichier parquet.
 
@@ -401,7 +540,7 @@ def gel_parquet(df, nom_fichier:str):
     ----------
     df : pd.DataFrame
         Data frame pandas à écrire en parquet.
-    nom_fichier : str 
+    nom_fichier : str
         Nom du fichier parquet à écrire.
     """
     chemin_sortie = DATA_DIR / "data_clean" / nom_fichier
@@ -410,6 +549,7 @@ def gel_parquet(df, nom_fichier:str):
 
 
 # Calcul du ratio de non répartis sur une année
+
 
 def calcul_ratio_nr_annee(df, annee, var):
     """
@@ -442,6 +582,7 @@ def calcul_ratio_nr_annee(df, annee, var):
 
 # Calcul du ratio de non répartis global
 
+
 def calcul_ratio_nr(df, var: str):
     """
     Calcule le ratio de licenciés 'Non Répartis' (NR) dans toute la base, pour la variable désirée.
@@ -471,6 +612,7 @@ def calcul_ratio_nr(df, var: str):
 
 
 # Création d'un tableau propre des ratios de non répartis
+
 
 def tableau_ratios_nr(df, var: str):
     """
@@ -511,6 +653,7 @@ def tableau_ratios_nr(df, var: str):
 
 
 # Extraction des données de population départementale par API
+
 
 def melodi_extraction(url_api):
     """
@@ -574,6 +717,7 @@ def melodi_extraction(url_api):
 
 # Création du code département pour la base de population
 
+
 def code_dep_pop(data_pop, var):
     """
     Extrait le code département à partir de la variable de
@@ -599,6 +743,7 @@ def code_dep_pop(data_pop, var):
 
 
 # Nettoyage de la base de population
+
 
 def clean_population(df):
     """
@@ -638,6 +783,7 @@ def clean_population(df):
 
 # Gel de la base de population
 
+
 def gel_population(df, nom_fichier="population_dept.csv"):
     """
     Gel de la base de population départementale en CSV.
@@ -652,6 +798,7 @@ def gel_population(df, nom_fichier="population_dept.csv"):
 
 
 # Enregistrement de la base finale
+
 
 def gel_final(df, nom_fichier="data_complet.parquet"):
     """
@@ -670,10 +817,11 @@ def gel_final(df, nom_fichier="data_complet.parquet"):
 
 # Chargement des données
 
+
 def charger_donnees(
-    data_complet_path= DATA_DIR / "data_clean" / "data_complet.parquet",
-    geojson_path= DATA_DIR / "data_clean" / "departements.geojson",
-    population_path= DATA_DIR / "data_clean" / "population_dept.csv",
+    data_complet_path=DATA_DIR / "data_clean" / "data_complet.parquet",
+    geojson_path=DATA_DIR / "data_clean" / "departements.geojson",
+    population_path=DATA_DIR / "data_clean" / "population_dept.csv",
 ):
     """
     Charge les données nécessaires pour les cartes et graphiques.

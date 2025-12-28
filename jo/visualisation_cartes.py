@@ -5,6 +5,7 @@ Ces fonctions affichent avec plt.show().
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import TwoSlopeNorm
 
 
 def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
@@ -88,7 +89,7 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
 
     # Titre
     ax.set_title(
-        f"Part des licenciés dans la population (%) – {titre_sport} – {annee} (population de {pop_ref_year})"
+        f"Part des licenciés dans la population (%) – {titre_sport} – {annee} (population de {pop_ref_year})" # pylint: disable=C0301
     )
 
     # Suppression des axes
@@ -150,6 +151,13 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
     # Calcul du taux de croissance
     merged["evolution"] = (merged["v2"] - merged["v1"]) / merged["v1"]
 
+    # On centre sur 0 (pour obtenir le négatif en bleu et le positif en rouge)
+    norm = TwoSlopeNorm(
+        vmin=merged["evolution"].min(),
+        vcenter=0,
+        vmax=merged["evolution"].max(),
+    )
+
     # Tracé
     ax = merged.plot(
         column="evolution",
@@ -158,6 +166,7 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
         edgecolor="grey",
         linewidth=0.5,
         cmap="coolwarm",
+        norm=norm,
         missing_kwds={
             "color": "lightgrey",
             "edgecolor": "grey",
