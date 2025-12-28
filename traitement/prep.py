@@ -5,8 +5,6 @@ Module de récupération, nettoyage et fusion des données.
 
 import unicodedata
 import json
-from pathlib import Path
-import hashlib
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -14,50 +12,35 @@ import numpy as np
 import pyarrow.parquet as pq
 import pyarrow as pa
 import geopandas as gpd
-from . import URL_JO, DATA_DIR, CACHE_DIR
+from . import URL_JO, DATA_DIR
 
+# Chargement de la page Wikipedia
 
-# --- Fonctions de gestion du cache ---
-def _cache_path_for(url: str, suffix: str) -> Path:
-    """Crée un nom de fichier stable à partir d'une URL."""
-    h = hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
-    return CACHE_DIR / f"{h}{suffix}"
-
-def get_url_bytes(url: str, *, suffix: str, force_download: bool = False,
-                  headers: dict | None = None, timeout: int = 30, verify: bool = True) -> bytes:
+def soup_from_url(url=URL_JO):
     """
-    Récupère le contenu d'une URL avec cache disque.
-    - Si le fichier cache existe et force_download=False : relit le fichier
-    - Sinon : télécharge et écrit le fichier cache
-    """
-    cache_path = _cache_path_for(url, suffix)
-    if cache_path.exists() and not force_download:
-        return cache_path.read_bytes()
+    Télécharge et analyse une page Wikipedia.
 
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    resp = requests.get(url, headers=headers, timeout=timeout, verify=verify)
-    resp.raise_for_status()
-    cache_path.write_bytes(resp.content)
-    return resp.content
+    Paramètres
+    ----------
+    url : str, optionnel
+        URL de la page à scraper.
 
-
-# --- Chargement de la page Wikipedia ---
-def soup_from_url(url, force_download=False):
+    Retour
+    ------
+    soup : BeautifulSoup
+        Objet BeautifulSoup contenant le HTML parsé.
     """
-    Récupère une page HTML et renvoie un BeautifulSoup (avec cache).
-    """
-    content = get_url_bytes(
+    response = requests.get(
         url,
-        suffix=".html",
-        force_download=force_download,
         headers={"User-Agent": "Python data science project"},
-        timeout=10,
-        verify=True,
+        timeout=10
     )
-    return BeautifulSoup(content, "lxml")
+    response.raise_for_status()
+    return BeautifulSoup(response.content, "lxml")
 
 
-# --- Scraping des tableaux de médailles ---
+# Scraping des tableaux de médailles
+
 def tableau_scraper(soup, id_html):
     """
     Scrape un tableau de médailles à partir d'un identifiant HTML Wikipedia.
@@ -104,7 +87,8 @@ def tableau_scraper(soup, id_html):
     return data_medailles
 
 
-# --- Sauvegarde d'un tableau de médailles ---
+# Sauvegarde d'un tableau de médailles
+
 def gel_tableau_medailles(type_medaille, id_html):
     """
     Scrape un tableau de médailles et le sauvegarde en CSV.
@@ -122,7 +106,8 @@ def gel_tableau_medailles(type_medaille, id_html):
     data.to_csv(output_path, index=False)
 
 
-# --- Nettoyage d'une base de médailles ---
+# Nettoyage d'une base de médailles
+
 def nettoyer_base(df):
     """
     Nettoie un DataFrame de médailles en supprimant les lignes et colonnes inutiles.
@@ -144,7 +129,8 @@ def nettoyer_base(df):
     return df
 
 
-# --- Fusion des bases de médailles ---
+# Fusion des bases de médailles
+
 def fusionner_bases(data_or, data_argent, data_bronze):
     """
     Fusionne les bases de médailles or, argent et bronze.
@@ -204,7 +190,8 @@ def fusionner_bases(data_or, data_argent, data_bronze):
     return data_medailles
 
 
-# --- Construction et sauvegarde de la base finale ---
+# Construction et sauvegarde de la base finale
+
 def gel_base_medailles_finale(nom_fichier="data_medailles_jo.csv"):
     """
     Construit et sauvegarde la base finale de médailles.
@@ -230,7 +217,8 @@ def gel_base_medailles_finale(nom_fichier="data_medailles_jo.csv"):
     return data_medailles
 
 
-# --- Réorganise les colonnes des fichiers licences ---
+# Réorganise les colonnes des fichiers licences
+
 def reorganiser_colonnes(liste_fichiers):
     """
     Réorganise les colonnes de tous les fichiers parquet
@@ -258,7 +246,8 @@ def reorganiser_colonnes(liste_fichiers):
     return tables
 
 
-# --- Normalisation des caractères en unicode dans la base licences ---
+# Normalisation des caractères en unicode dans la base licences
+
 def normalisation_unicode(table):
     """
     Normalise les caractères en unicode dans une table et renvoie un data frame pandas.
@@ -290,7 +279,8 @@ def normalisation_unicode(table):
     return df
 
 
-# --- Ajout du code sport à la base licences ---
+# Ajout du code sport à la base licences
+
 def code_sport(df):
     """
     Ajoute le code_sport à la base des licenciés.
@@ -343,7 +333,8 @@ def code_sport(df):
     return df
 
 
-# --- Création du code département pour la base des licences ---
+# Création du code département pour la base des licences
+
 def code_dep(df, var):
     """
     Crée un code département avec seulement leur numéro.
@@ -365,7 +356,8 @@ def code_dep(df, var):
     return df
 
 
-# --- Renommer les colonnes de la base licences ---
+# Renommer les colonnes de la base licences
+
 def renommer_colonnes(df):
     """
     Renomme les colonnes du data frame licenciés.
@@ -399,7 +391,8 @@ def renommer_colonnes(df):
 
     return df
 
-# --- Gel de la base en parquet ---
+# Gel de la base en parquet
+
 def gel_parquet(df, nom_fichier:str):
     """
     Gel de la base des licenciés en fichier parquet.
@@ -416,7 +409,8 @@ def gel_parquet(df, nom_fichier:str):
     pq.write_table(table, chemin_sortie)
 
 
-# --- Calcul du ratio de non répartis sur une année ---
+# Calcul du ratio de non répartis sur une année
+
 def calcul_ratio_nr_annee(df, annee, var):
     """
     Calcule le ratio de licenciés 'Non Répartis' (NR) par année, pour la variable désirée.
@@ -446,7 +440,8 @@ def calcul_ratio_nr_annee(df, annee, var):
     )
 
 
-# --- Calcul du ratio de non répartis global ---
+# Calcul du ratio de non répartis global
+
 def calcul_ratio_nr(df, var: str):
     """
     Calcule le ratio de licenciés 'Non Répartis' (NR) dans toute la base, pour la variable désirée.
@@ -475,7 +470,8 @@ def calcul_ratio_nr(df, var: str):
     return df_nr["licences_annuelles"].sum() / df["licences_annuelles"].sum()
 
 
-# --- Création d'un tableau propre des ratios de non répartis ---
+# Création d'un tableau propre des ratios de non répartis
+
 def tableau_ratios_nr(df, var: str):
     """
     Calcule et présente le ratio de licenciés 'Non Répartis' (NR) par année et le ratio global
@@ -514,7 +510,8 @@ def tableau_ratios_nr(df, var: str):
     return df_ratios_nr
 
 
-# --- Extraction des données de population départementale par API ---
+# Extraction des données de population départementale par API
+
 def melodi_extraction(url_api):
     """
     Extrait les données de population au niveau départemental
@@ -575,7 +572,8 @@ def melodi_extraction(url_api):
     return data_pop
 
 
-# --- Création du code département pour la base de population ---
+# Création du code département pour la base de population
+
 def code_dep_pop(data_pop, var):
     """
     Extrait le code département à partir de la variable de
@@ -600,7 +598,8 @@ def code_dep_pop(data_pop, var):
     return data_pop
 
 
-# --- Nettoyage de la base de population ---
+# Nettoyage de la base de population
+
 def clean_population(df):
     """
     Nettoie la base de données de population :
@@ -637,7 +636,8 @@ def clean_population(df):
     return data_pop_clean
 
 
-# --- Gel de la base de population ---
+# Gel de la base de population
+
 def gel_population(df, nom_fichier="population_dept.csv"):
     """
     Gel de la base de population départementale en CSV.
@@ -651,8 +651,9 @@ def gel_population(df, nom_fichier="population_dept.csv"):
     df.to_csv(output_path, index=False)
 
 
-# --- Enregistrement de la base finale --- 
-def gel_final(df, nom_fichier="data_complet.parquet"): 
+# Enregistrement de la base finale
+
+def gel_final(df, nom_fichier="data_complet.parquet"):
     """
     Gel de la base finale en parquet.
 
@@ -666,7 +667,9 @@ def gel_final(df, nom_fichier="data_complet.parquet"):
     output_path = DATA_DIR / "data_clean" / nom_fichier
     df.to_parquet(output_path, index=False)
 
-# --- Chargement des données ---
+
+# Chargement des données
+
 def charger_donnees(
     data_complet_path= DATA_DIR / "data_clean" / "data_complet.parquet",
     geojson_path= DATA_DIR / "data_clean" / "departements.geojson",
