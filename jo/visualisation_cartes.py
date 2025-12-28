@@ -102,7 +102,7 @@ def carte_licencies(data_complet, gdf_dep, data_pop, annee, sport="all"):
 def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"):
     """
     Affiche une carte du taux de croissance des licenciés par département
-    entre deux années pour un sport donné.
+    entre deux années pour un sport donné et compte le nombre de départements avec un taux de croissance positif.
 
     Paramètres
     ----------
@@ -122,6 +122,8 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
     Carte matplotlib représentant le taux de croissance des licenciés par
     département. Les départements sans données sont indiqués en gris clair
     avec un motif hachuré.
+    Affiche le nombre de départements avec un taux de croissance positif et
+    le nombre de départements avec un taux de croissance négatif.
     """
     df = data_complet.dropna(subset=["code_dep"]).copy()
 
@@ -187,3 +189,7 @@ def carte_evolution_licencies(data_complet, gdf_dep, annee1, annee2, sport="all"
 
     # Affichage de la carte
     plt.show()
+
+    # Affichage du nombre de départements avec un taux de croissance positif ou négatif
+    print(f'{merged[merged["evolution"] >= 0]["evolution"].count()} départements voient leurs licenciés de {sport} augmenter.')
+    print(f'{merged[merged["evolution"] < 0]["evolution"].count()} départements voient leurs licenciés de {sport} diminuer.')
