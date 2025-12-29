@@ -280,7 +280,7 @@ def test_medals_incremental(
     ctrl = (" + " + " + ".join(controls)) if controls else ""
 
     # Spécifications avec effets fixes sport et année
-    f0 = f"dlog_lic ~ C(code_sport) + C(annee){ctrl}"
+    #f0 = f"dlog_lic ~ C(code_sport) + C(annee){ctrl}"
     f1 = f"dlog_lic ~ med_last + C(code_sport) + C(annee){ctrl}"
 
 
