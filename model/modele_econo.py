@@ -76,7 +76,7 @@
 #         cov_kwds={"groups": dfp["code_sport"]},
 #     )
 
-#     return model
+# return model
 
 
 
