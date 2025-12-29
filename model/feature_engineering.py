@@ -17,13 +17,13 @@ def agreg_licencies_par_sport_annee(df: pd.DataFrame) -> pd.DataFrame:
     """
     Agrège le nombre de licences par sport et par année.
 
-    Parameters
+    Paramètre
     ----------
     df : pandas.DataFrame
         DataFrame contenant au minimum :
         ['code_sport', 'annee', 'licences_annuelles'].
 
-    Returns
+    Retours
     -------
     pandas.DataFrame
         DataFrame agrégé avec :

@@ -24,7 +24,7 @@ def eval_ablation_models(
     Évalue des modèles Ridge en ablation pour prédire le niveau de licences sportives,
     à partir d'un panel sport–année, en comparant différentes spécifications.
 
-    Parameters
+    Paramètres
     ----------
     df_model_full : pandas.DataFrame
         Dataset panel au niveau (code_sport, annee) contenant au minimum :
@@ -46,7 +46,7 @@ def eval_ablation_models(
     alpha : float, optional (default=1.0)
         Paramètre de régularisation L2 du modèle Ridge.
 
-    Returns
+    Retour
     -------
     pandas.DataFrame
         Tableau récapitulatif des performances en test, avec les colonnes :
@@ -177,7 +177,7 @@ def ridge_coefficients(
     # Features numériques utilisées
     feats = ["log_lag1", "trend", "med_last"]
 
-    # Design matrix avec effets fixes sport (one-hot)
+    # Design matrice avec effets fixes sport (one-hot)
     X = pd.get_dummies( #pylint: disable=C0103
         train_df[["code_sport"] + feats],
         columns=["code_sport"],
