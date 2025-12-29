@@ -26,9 +26,9 @@ La base de données de l'INJEP a l'avantage de présenter une classification fin
 
 ## Modèle
 Nous avons utilisé trois types de modèles :
-1. Modèle économétrique de panel : mesurer l’effet moyen des médailles olympiques sur la croissance annuelle du nombre de licenciés par sport.
-2. Modèles Ridge : quantifier le rôle de l’inertie temporelle par rapport aux médailles dans la prédiction du niveau de licenciés.
-3. Test économétrique incrémental : évaluer si les médailles apportent une information additionnelle dans le modèle économétrique de croissance.
+1. Modèle économétrique de panel : mesure l’effet moyen des médailles olympiques sur la croissance annuelle du nombre de licenciés par sport.
+2. Modèles Ridge : quantifie le rôle de l’inertie temporelle par rapport aux médailles dans la prédiction du niveau de licenciés.
+3. Test économétrique incrémental : évalue si les médailles apportent une information additionnelle dans le modèle économétrique de croissance.
 
 ## Reproduction du projet
 **Installation**. Cloner le projet.
