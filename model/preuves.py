@@ -13,8 +13,6 @@ import statsmodels.formula.api as smf
 # Preuve 1
 
 
-
-
 def eval_ablation_models(
     df_model_full: pd.DataFrame,
     train_years: tuple[int, int] = (2017, 2020),
@@ -25,15 +23,6 @@ def eval_ablation_models(
     """
     Évalue des modèles Ridge en ablation pour prédire le niveau de licences sportives,
     à partir d'un panel sport–année, en comparant différentes spécifications.
-
-    La variable cible est le logarithme de (1 + licences_annuelles).
-    Les modèles incluent des effets fixes sport (via variables indicatrices)
-    et sont entraînés sur une période passée puis évalués sur une période future.
-
-    Spécifications évaluées :
-    - M0 : inertie seule (lag 1 du log des licences)
-    - M1 : médailles seules (JO de référence)
-    - M2 : inertie + médailles
 
     Parameters
     ----------
@@ -65,15 +54,6 @@ def eval_ablation_models(
         - 'R2_log' : coefficient de détermination R² sur la cible en log
         - 'MAE_niveau' : erreur absolue moyenne sur la cible en niveau
           (après transformation inverse expm1)
-
-    Notes
-    -----
-    - Les effets fixes sport sont implémentés via des variables indicatrices
-      (one-hot encoding de `code_sport`).
-    - Le split train / test est strictement temporel afin d'éviter toute fuite
-      d'information.
-    - Les performances sont évaluées uniquement sur les observations disposant
-      d'un lag valide de la variable cible.
     """
     df = df_model_full.sort_values(["code_sport", "annee"]).copy()
 
@@ -94,19 +74,19 @@ def eval_ablation_models(
     test_df = df[df["annee"].between(*test_years)].copy()
 
     def fit_predict(feats: list[str]) -> dict[str, float]:
-        Xtr = pd.get_dummies(
+        Xtr = pd.get_dummies( #pylint: disable=C0103
             train_df[["code_sport"] + feats],
             columns=["code_sport"],
             drop_first=True,
         ).astype("float32")
 
-        Xte = pd.get_dummies(
+        Xte = pd.get_dummies( #pylint: disable=C0103
             test_df[["code_sport"] + feats],
             columns=["code_sport"],
             drop_first=True,
         ).astype("float32")
 
-        Xte = Xte.reindex(columns=Xtr.columns, fill_value=0).astype("float32")
+        Xte = Xte.reindex(columns=Xtr.columns, fill_value=0).astype("float32") #pylint: disable=C0103
 
         ytr = train_df["y"].astype("float32").values
         yte = test_df["y"].astype("float32").values
@@ -130,7 +110,8 @@ def eval_ablation_models(
     return pd.DataFrame(res)
 
 
-#### preuve 2
+# Preuve 2
+
 
 def ridge_coefficients(
     df_model_full: pd.DataFrame,
@@ -141,10 +122,6 @@ def ridge_coefficients(
     """
     Entraîne un modèle Ridge (régression L2) sur une période d'entraînement et
     retourne les coefficients estimés, triés par importance absolue.
-
-    L'objectif ici n'est pas une inférence causale, mais une lecture *prédictive* :
-    quels signaux (inertie, tendance, médailles, effets fixes sport) portent le
-    plus d'information pour expliquer le niveau des licences en log.
 
     Paramètres
     ----------
@@ -201,7 +178,7 @@ def ridge_coefficients(
     feats = ["log_lag1", "trend", "med_last"]
 
     # Design matrix avec effets fixes sport (one-hot)
-    X = pd.get_dummies(
+    X = pd.get_dummies( #pylint: disable=C0103
         train_df[["code_sport"] + feats],
         columns=["code_sport"],
         drop_first=True,
@@ -221,11 +198,7 @@ def ridge_coefficients(
     return coef
 
 
-# preuve 3
-
-import numpy as np
-import pandas as pd
-import statsmodels.formula.api as smf
+# Preuve 3
 
 
 def test_medals_incremental(
@@ -237,17 +210,6 @@ def test_medals_incremental(
     """
     Teste l'apport incrémental des médailles olympiques dans un modèle
     de croissance des licences, avec effets fixes sport et année.
-
-    La variable dépendante est la croissance annuelle du logarithme
-    du nombre de licences :
-        dlog_lic = log(1 + licences_t) - log(1 + licences_{t-1})
-
-    Deux spécifications sont comparées :
-    - Modèle M0 : sans médailles
-    - Modèle M1 : avec médailles (med_last)
-
-    L'apport des médailles est évalué via un test de Wald sur le
-    coefficient associé à `med_last`.
 
     Paramètres
     ----------
@@ -336,6 +298,3 @@ def test_medals_incremental(
     wald = m1.wald_test("med_last = 0")
 
     return m0, m1, wald
-
-
-

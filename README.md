@@ -25,7 +25,10 @@ Ces données sont obtenues par trois sources différentes, respectivement :
 La base de données de l'INJEP a l'avantage de présenter une classification fine des licenciés selon leurs caractéristiques socio-démographiques (âge, sexe, département d'exercice).
 
 ## Modèle
-#TODO raconter quels modèles on a utilisé tout ça
+Nous avons utilisé trois types de modèles :
+1. Modèle économétrique de panel : mesurer l’effet moyen des médailles olympiques sur la croissance annuelle du nombre de licenciés par sport.
+2. Modèles Ridge : quantifier le rôle de l’inertie temporelle par rapport aux médailles dans la prédiction du niveau de licenciés.
+3. Test économétrique incrémental : évaluer si les médailles apportent une information additionnelle dans le modèle économétrique de croissance.
 
 ## Reproduction du projet
 **Installation**. Cloner le projet.
