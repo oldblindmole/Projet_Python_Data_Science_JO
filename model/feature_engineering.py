@@ -78,8 +78,9 @@ def build_lic_features(df_lic: pd.DataFrame) -> pd.DataFrame:
     if sex_col is not None:
         s = df[sex_col].astype(str).str.lower()
 
-        df["_is_femme"] = s.isin(["f", "femme", "female", "women", "woman"]).astype(int)
-        df["_is_homme"] = s.isin(["m", "homme", "male", "men", "man"]).astype(int)
+        df["_is_femme"] = (s == "f").astype(int)
+        df["_is_homme"] = (s == "h").astype(int)
+
 
         sex = (
             df.groupby(["code_sport", "annee"])

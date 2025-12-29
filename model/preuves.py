@@ -283,12 +283,16 @@ def test_medals_incremental(
     f0 = f"dlog_lic ~ C(code_sport) + C(annee){ctrl}"
     f1 = f"dlog_lic ~ med_last + C(code_sport) + C(annee){ctrl}"
 
-    # Estimation avec erreurs standards clusterisées par sport
-    m0 = smf.ols(f0, data=dfp).fit(
-        cov_type="cluster",
-        cov_kwds={"groups": dfp["code_sport"]},
-    )
 
+    # Estimation avec erreurs standards clusterisées par sport
+
+    #m0 = regression de référence (= m1 quand med_last = 0)
+    # m0 = smf.ols(f0, data=dfp).fit(
+    #     cov_type="cluster",
+    #     cov_kwds={"groups": dfp["code_sport"]},
+    # )
+
+    #m1 = la régression avec médailles
     m1 = smf.ols(f1, data=dfp).fit(
         cov_type="cluster",
         cov_kwds={"groups": dfp["code_sport"]},
@@ -297,4 +301,4 @@ def test_medals_incremental(
     # Test de Wald : H0 : coefficient des médailles = 0
     wald = m1.wald_test("med_last = 0")
 
-    return m0, m1, wald
+    return  m1, wald
