@@ -70,41 +70,7 @@ def build_lic_features(df_lic: pd.DataFrame) -> pd.DataFrame:
     )
 
     # Sexe
-    
-    sex_col = next(
-        (c for c in ["sexe", "genre", "sex", "gender"] if c in df.columns), None
-    )
-
-    if sex_col is not None:
-        s = df[sex_col].astype(str).str.lower()
-
-        df["_is_femme"] = (s == "f").astype(int)
-        df["_is_homme"] = (s == "h").astype(int)
-
-
-        sex = (
-            df.groupby(["code_sport", "annee"])
-            .apply(
-                lambda x: pd.Series(
-                    {
-                        "nb_femmes": (x["licences_annuelles"] * x["_is_femme"]).sum(),
-                        "nb_hommes": (x["licences_annuelles"] * x["_is_homme"]).sum(),
-                    }
-                )
-            )
-            .reset_index()
-        )
-
-        out = out.merge(sex, on=["code_sport", "annee"], how="left").fillna(0.0)
-
-        out["part_femmes"] = safe_div(
-            out["nb_femmes"], out["nb_femmes"] + out["nb_hommes"]
-        )
-
-        df.drop(columns=["_is_femme", "_is_homme"], inplace=True, errors="ignore")
-    df.drop(columns=["nb_femmes", "nb_hommes"], inplace=True, errors="ignore")
-
-
+          
     # Sexe (colonne connue : "sexe", modalités : "F" / "H")
     s = df["sexe"].astype(str).str.strip().str.lower()
 
@@ -484,5 +450,5 @@ def build_model_dataset(df_raw: pd.DataFrame) -> pd.DataFrame:
         on=["code_sport", "annee"],
         how="left",
     )
-    #df_final.drop(columns=["nb_femmes", "nb_hommes"], inplace=True, errors="ignore")
+    df_final.drop(columns=["nb_femmes", "nb_hommes"], inplace=True, errors="ignore")
     return df_final
