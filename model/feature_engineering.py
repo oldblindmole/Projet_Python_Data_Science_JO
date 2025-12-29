@@ -129,7 +129,7 @@ def build_lic_features(df_lic: pd.DataFrame) -> pd.DataFrame:
 
     # Nettoyage des colonnes temporaires dans df (pas dans out)
     df.drop(columns=["_is_femme", "_is_homme"], inplace=True, errors="ignore")
-    out.drop(columns=["nb_femmes", "nb_hommes"], inplace=True, errors="ignore")
+    
 
 
     # Âge
@@ -484,5 +484,5 @@ def build_model_dataset(df_raw: pd.DataFrame) -> pd.DataFrame:
         on=["code_sport", "annee"],
         how="left",
     )
-
+    #df_final.drop(columns=["nb_femmes", "nb_hommes"], inplace=True, errors="ignore")
     return df_final
